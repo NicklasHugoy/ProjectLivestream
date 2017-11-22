@@ -2,7 +2,7 @@
 
 int main(void) {
 
-  printf("Sut den Daniél");
+  printf("Sut den");
   
   return 0;
 }
