@@ -2,5 +2,7 @@
 
 int main()
 {
-    
+    goto home;
+
+    home: return 1;
 }
