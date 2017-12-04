@@ -39,7 +39,7 @@ int main(void)
     FILE *inputFile = fopen("TextFiles/Cryaotic_ChatLog_21-11.txt", "r");
     struct Message message;
     int scoreThreshold;
-    int chatDelay;
+    int chatDelay=10;
     char streamerUsername[30];
     struct Users user[MAX_UNIC_USERS];
 
@@ -53,6 +53,8 @@ int main(void)
         printf("timeStamp: %s\n", message.timeStamp);
         printf("Username: %s\n", message.username);
         printf("Message: %s\n\n\n",message.message);
+        if(SingleChatterDelay(user, chatDelay, message)<chatDelay)
+        	continue;
         OutputToFile(message, outputFile);
     }
 
@@ -88,13 +90,12 @@ int ConvertTimestamp(char timestamp[])
 	const int MIN = 60;
 	const int SEC = 60;
 	char tempTime[12];
-	int hours, minutes, seconds, results;
+	int hours, minutes, seconds, tempresult, results;
 
 	sscanf(timestamp,"%s %d:%d:%d", tempTime, &hours, &minutes, &seconds);
 
-	results= hours*MIN + minutes;
-	results+= results*SEC + seconds;
-	printf("%d\n",results);
+	tempresult= hours*MIN + minutes;
+	results= tempresult*SEC + seconds;
 	return results;
 
 }
@@ -132,7 +133,7 @@ void OutputToFile(struct Message message, FILE *outputFile)
 int SingleChatterDelay(struct Users user[], int chatDelay, struct Message newMessage){
 	int i;
 	int userindex = MAX_UNIC_USERS;
-	int result=1;
+	int result=chatDelay+1;
 	struct Users newUser;
 
 	strcpy(newUser.username, newMessage.username);
@@ -142,9 +143,9 @@ int SingleChatterDelay(struct Users user[], int chatDelay, struct Message newMes
 	{
 		if(strcmp(newUser.username, user[i].username)==0)
 		{
-			result = ConvertTimestamp(newUser.timeStamp) - CountAmountOfLines(user[i].timeStamp);
-			result = result > chatDelay;
+			result = ConvertTimestamp(newUser.timeStamp) - ConvertTimestamp(user[i].timeStamp);
 			userindex=i+1;
+			break;
 		}
 	}
 	for(i=userindex-1; i>0; i--)
@@ -155,6 +156,5 @@ int SingleChatterDelay(struct Users user[], int chatDelay, struct Message newMes
 			user[i-1]=newUser;
 		}
 	}
-
 	return result;
 }
