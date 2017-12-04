@@ -6,6 +6,8 @@
 /********************************/
 
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 struct User
 {
@@ -15,6 +17,7 @@ struct User
 };
 
 void ReadChatLog(FILE* inputFile, struct User users[]);
+int ConvertTimestamp(char timestamp[]);
 
 int main(void)
 {
@@ -23,6 +26,11 @@ int main(void)
     struct User users[30];
 
     ReadChatLog(inputFile, users);
+
+    for (int i = 0; i < 10; ++i)
+    {
+    	ConvertTimestamp(users[i].timeStamp);
+    }
 
     fclose(outputFile);
     return 0;
@@ -40,4 +48,21 @@ void ReadChatLog(FILE* inputFile, struct User users[])
     }
 
     fclose(inputFile);
+}
+
+
+int ConvertTimestamp(char timestamp[])
+{
+	const int MIN = 60;
+	const int SEC = 60;
+	char tempTime[12];
+	int hours, minutes, seconds, results;
+
+	sscanf(timestamp,"%s %d:%d:%d", tempTime, &hours, &minutes, &seconds);
+
+	results= hours*MIN + minutes;
+	results+= results*SEC + seconds;
+	printf("%d\n",results);
+	return results;
+
 }
