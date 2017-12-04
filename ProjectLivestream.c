@@ -35,13 +35,22 @@ void ReadChatLog(struct User user, char path[])
 {
     FILE *inputFile = fopen(path, "r");
 
-    while(fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: %[^\n]",
-        user.timeStamp, user.username, user.message) == 3)
+    if(inputFile != NULL)
     {
-        printf("timeStamp: %s\n", user.timeStamp);
-        printf("Username: %s\n", user.username);
-        printf("Message: %s\n\n\n",user.message);
+        while(fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: %[^\n]",
+            user.timeStamp, user.username, user.message) == 3)
+        {
+            printf("timeStamp: %s\n", user.timeStamp);
+            printf("Username: %s\n", user.username);
+            printf("Message: %s\n\n\n",user.message);
+        }
     }
+    else
+    {
+        printf("Problem with file, exiting program...\n");
+        exit(EXIT_FAILURE);
+    }
+
     fclose(inputFile);
 }
 
