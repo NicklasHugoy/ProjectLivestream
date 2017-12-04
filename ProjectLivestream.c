@@ -38,6 +38,7 @@ int main(void)
         printf("timeStamp: %s\n", user.timeStamp);
         printf("Username: %s\n", user.username);
         printf("Message: %s\n\n\n",user.message);
+        OutputToFile(user,outputFile);
     }
 
     fclose(outputFile);
@@ -102,5 +103,5 @@ int CountAmountOfLines(char path[])
 
 void OutputToFile(struct User user, FILE *outputFile)
 {
-	fprintf(outputFile,"%s %s %s", user.timeStamp, user.username, user.message);
+	fprintf(outputFile,"[%s]%s : %s\n", user.timeStamp, user.username, user.message);
 }
