@@ -63,12 +63,6 @@ int main(void)
                 continue;
         }
         OutputToFile(message, outputFile, savedMessages);
-        printf("%s\n", message.message);
-    }
-
-    for(int i=0; i<NUMBER_OF_SAVED_MESSAGES; i++)
-    {
-        printf("%s\n", savedMessages[i].message);
     }
 
 
