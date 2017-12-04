@@ -22,6 +22,7 @@ struct User
 int ConvertTimestamp(char timestamp[]);
 void ReadChatLog(struct User user, char path[]);
 int CountAmountOfLines(char path[]);
+void OutputToFile(struct User user, FILE *outputFile);
 
 int main(void)
 {
@@ -36,7 +37,6 @@ int main(void)
 void ReadChatLog(struct User user, char path[])
 {
     FILE *inputFile = fopen(path, "r");
-
     if(inputFile != NULL)
     {
         while(fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: %[^\n]",
@@ -96,4 +96,9 @@ int CountAmountOfLines(char path[])
     }
     fclose(inputFile);
     return amountOfMessages;
+}
+
+void OutputToFile(struct User user, FILE *outputFile)
+{
+	fprintf(outputFile,"%s %s %s", user.timeStamp, user.username, user.message);
 }
