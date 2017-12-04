@@ -20,40 +20,41 @@ struct User
 
 
 int ConvertTimestamp(char timestamp[]);
-void ReadChatLog(struct User user, char path[]);
+void ReadChatLog(struct User *user, FILE* inputFile);
 int CountAmountOfLines(char path[]);
 
 int main(void)
 {
     FILE *outputFile = fopen("TextFiles/Output.txt", "w");
+    FILE *inputFile = fopen("TextFiles/Cryaotic_ChatLog_21-11.txt", "r");
     struct User user;
 
-    ReadChatLog(user, "TextFiles/Cryaotic_ChatLog_21-11.txt");
+    int numberOfMessages = CountAmountOfLines("TextFiles/Cryaotic_ChatLog_21-11.txt");
+
+    for(int i=0; i < numberOfMessages; i++)
+    {
+        ReadChatLog(&user, inputFile);
+        printf("timeStamp: %s\n", user.timeStamp);
+        printf("Username: %s\n", user.username);
+        printf("Message: %s\n\n\n",user.message);
+    }
+
     fclose(outputFile);
     return 0;
 }
 
-void ReadChatLog(struct User user, char path[])
+void ReadChatLog(struct User *user, FILE* inputFile)
 {
-    FILE *inputFile = fopen(path, "r");
-
     if(inputFile != NULL)
     {
-        while(fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: %[^\n]",
-            user.timeStamp, user.username, user.message) == 3)
-        {
-            printf("timeStamp: %s\n", user.timeStamp);
-            printf("Username: %s\n", user.username);
-            printf("Message: %s\n\n\n",user.message);
-        }
+        fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: %[^\n]",
+            user->timeStamp, user->username, user->message);
     }
     else
     {
         printf("Problem with file, exiting program...\n");
         exit(EXIT_FAILURE);
     }
-
-    fclose(inputFile);
 }
 
 /*convert timestamp to int of seconds*/
