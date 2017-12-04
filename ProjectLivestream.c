@@ -18,7 +18,7 @@ struct User
     char message[500];
 };
 
-
+void UserInputDialog(int *scoreThreshold, char streamerUsername[]);
 int ConvertTimestamp(char timestamp[]);
 void ReadChatLog(struct User *user, FILE* inputFile);
 int CountAmountOfLines(char path[]);
@@ -29,6 +29,10 @@ int main(void)
     FILE *outputFile = fopen("TextFiles/Output.txt", "w");
     FILE *inputFile = fopen("TextFiles/Cryaotic_ChatLog_21-11.txt", "r");
     struct User user;
+    int scoreThreshold;
+    char streamerUsername[30];
+
+    UserInputDialog(&scoreThreshold, streamerUsername);
 
     int numberOfMessages = CountAmountOfLines("TextFiles/Cryaotic_ChatLog_21-11.txt");
 
@@ -43,6 +47,14 @@ int main(void)
 
     fclose(outputFile);
     return 0;
+}
+
+void UserInputDialog(int *scoreThreshold, char streamerUsername[])
+{
+    printf("Please enter score threshold: ");
+    scanf("%d", scoreThreshold);
+    printf("Please enter your username: ");
+    scanf("%s", streamerUsername);
 }
 
 void ReadChatLog(struct User *user, FILE* inputFile)
