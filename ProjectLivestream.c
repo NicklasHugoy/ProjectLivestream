@@ -23,7 +23,7 @@ struct Message
 struct Users
 {
 	char username[40];
-	char timestamp[40];
+	char timeStamp[40];
 };
 
 void UserInputDialog(int *scoreThreshold, char streamerUsername[]);
@@ -31,7 +31,7 @@ int ConvertTimestamp(char timestamp[]);
 void ReadChatLog(struct Message *message, FILE* inputFile);
 int CountAmountOfLines(char path[]);
 void OutputToFile(struct Message message, FILE *outputFile);
-int SingleChatterDelay(struct Users user[], int chatDelay, struct Users newUser);
+int SingleChatterDelay(struct Users user[], int chatDelay, struct Message newMessage);
 
 int main(void)
 {
@@ -129,15 +129,20 @@ void OutputToFile(struct Message message, FILE *outputFile)
 	fprintf(outputFile,"[%s]%s : %s\n", message.timeStamp, message.username, message.message);
 }
 /*Checker om den nye bruger har skrevet før og om han må skrive igen.*/
-int SingleChatterDelay(struct Users user[], int chatDelay, struct Users newUser){
+int SingleChatterDelay(struct Users user[], int chatDelay, struct Message newMessage){
 	int i;
 	int userindex = MAX_UNIC_USERS;
 	int result=1;
+	struct Users newUser;
+
+	strcpy(newUser.username, newMessage.username);
+	strcpy(newUser.timeStamp, newMessage.timeStamp);
+
 	for(i=0; i<MAX_UNIC_USERS; i++)
 	{
 		if(strcmp(newUser.username, user[i].username)==0)
 		{
-			result = ConvertTimestamp(newUser.timestamp) - CountAmountOfLines(user[i].timestamp);
+			result = ConvertTimestamp(newUser.timeStamp) - CountAmountOfLines(user[i].timeStamp);
 			result = result > chatDelay;
 			userindex=i+1;
 		}
