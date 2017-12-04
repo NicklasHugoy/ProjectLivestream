@@ -46,10 +46,6 @@ int main(void)
 
 void ReadChatLog(struct User *user, FILE* inputFile)
 {
-<<<<<<< HEAD
-    FILE *inputFile = fopen(path, "r");
-=======
->>>>>>> c045d15d2fce3d290d52704d8b0a48104c76a55c
     if(inputFile != NULL)
     {
         fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: %[^\n]",
