@@ -14,50 +14,41 @@ struct User
 {
     char username[40];
     char timeStamp[40];
-    char message[100];
+    char message[500];
 };
 
-void ReadChatLog(struct User users[], FILE *inputFile);
-int CountMessages(FILE *inputFile);
+void ReadChatLog(struct User user, char path[]);
+int CountAmountOfLines(char path[]);
 
 int main(void)
 {
-    FILE *inputFile = fopen("TextFiles/Cryaotic_ChatLog_21-11.txt", "r");
     FILE *outputFile = fopen("TextFiles/Output.txt", "w");
-    struct User *users;
-    int numberOfMessages;
+    struct User user;
 
-    numberOfMessages = CountMessages(inputFile);
-
-    users = (struct User *)malloc(numberOfMessages * sizeof(struct User));
-
-    ReadChatLog(users, inputFile);
+    ReadChatLog(user, "TextFiles/Cryaotic_ChatLog_21-11.txt");
 
     fclose(outputFile);
     return 0;
 }
 
-void ReadChatLog(struct User users[], FILE *inputFile)
+void ReadChatLog(struct User user, char path[])
 {
-    int i=0;
+    FILE *inputFile = fopen(path, "r");
 
     while(fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: %[^\n]",
-        users[i].timeStamp, users[i].username, users[i].message) == 3)
+        user.timeStamp, user.username, user.message) == 3)
     {
-        printf("timeStamp: %s\n", users[i].timeStamp);
-        printf("Username: %s\n", users[i].username);
-        printf("Message: %s\n\n\n",users[i].message);
-        i++;
+        printf("timeStamp: %s\n", user.timeStamp);
+        printf("Username: %s\n", user.username);
+        printf("Message: %s\n\n\n",user.message);
     }
-
-    printf("i: %d\n", i);
-    printf("test: %s\n\n\n",users[293].message);
-
     fclose(inputFile);
 }
 
-int CountMessages(FILE *inputFile)
+/* Returns the amount of lines in the inputFIle */
+int CountAmountOfLines(char path[])
 {
+    FILE *inputFile = fopen(path, "r");
     int amountOfMessages = 0, scanres;
     char buffer[MAX_LINES];
 
@@ -76,6 +67,6 @@ int CountMessages(FILE *inputFile)
         printf("Problem with file, exiting program...\n");
         exit(EXIT_FAILURE);
     }
-    rewind(inputFile);
+    fclose(inputFile);
     return amountOfMessages;
 }
