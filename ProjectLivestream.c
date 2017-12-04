@@ -11,24 +11,31 @@
 
 #define MAX_LINES 500
 
-struct User
+struct Message
 {
     char username[40];
     char timeStamp[40];
     char message[500];
+    int points;
+};
+
+struct Users
+{
+	char username[40];
+	int timestamp;
 };
 
 void UserInputDialog(int *scoreThreshold, char streamerUsername[]);
 int ConvertTimestamp(char timestamp[]);
-void ReadChatLog(struct User *user, FILE* inputFile);
+void ReadChatLog(struct Message *message, FILE* inputFile);
 int CountAmountOfLines(char path[]);
-void OutputToFile(struct User user, FILE *outputFile);
+void OutputToFile(struct Message message, FILE *outputFile);
 
 int main(void)
 {
     FILE *outputFile = fopen("TextFiles/Output.txt", "w");
     FILE *inputFile = fopen("TextFiles/Cryaotic_ChatLog_21-11.txt", "r");
-    struct User user;
+    struct Message message;
     int scoreThreshold;
     char streamerUsername[30];
 
@@ -38,11 +45,11 @@ int main(void)
 
     for(int i=0; i < numberOfMessages; i++)
     {
-        ReadChatLog(&user, inputFile);
-        printf("timeStamp: %s\n", user.timeStamp);
-        printf("Username: %s\n", user.username);
-        printf("Message: %s\n\n\n",user.message);
-        OutputToFile(user,outputFile);
+        ReadChatLog(&message, inputFile);
+        printf("timeStamp: %s\n", message.timeStamp);
+        printf("Username: %s\n", message.username);
+        printf("Message: %s\n\n\n",message.message);
+        OutputToFile(message, outputFile);
     }
 
     fclose(outputFile);
@@ -57,12 +64,12 @@ void UserInputDialog(int *scoreThreshold, char streamerUsername[])
     scanf("%s", streamerUsername);
 }
 
-void ReadChatLog(struct User *user, FILE* inputFile)
+void ReadChatLog(struct Message *message, FILE* inputFile)
 {
     if(inputFile != NULL)
     {
         fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: %[^\n]",
-            user->timeStamp, user->username, user->message);
+            message->timeStamp, message->username, message->message);
     }
     else
     {
@@ -113,7 +120,7 @@ int CountAmountOfLines(char path[])
     return amountOfMessages;
 }
 
-void OutputToFile(struct User user, FILE *outputFile)
+void OutputToFile(struct Message message, FILE *outputFile)
 {
-	fprintf(outputFile,"[%s]%s : %s\n", user.timeStamp, user.username, user.message);
+	fprintf(outputFile,"[%s]%s : %s\n", message.timeStamp, message.username, message.message);
 }
