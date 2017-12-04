@@ -11,6 +11,7 @@
 
 #define MAX_LINES 500
 #define MAX_UNIC_USERS 15
+#define NUMBER_OF_SAVED_MESSAGES 5
 
 struct Message
 {
@@ -30,14 +31,17 @@ void UserInputDialog(int *scoreThreshold, char streamerUsername[]);
 int ConvertTimestamp(char timestamp[]);
 void ReadChatLog(struct Message *message, FILE* inputFile);
 int CountAmountOfLines(char path[]);
-void OutputToFile(struct Message message, FILE *outputFile);
 int SingleChatterDelay(struct Users user[], int chatDelay, struct Message newMessage);
+void OutputToFile(struct Message message, FILE *outputFile, struct Message savedMessages[]);
+void SaveMessage(struct Message message, struct Message savedMessages[]);
+int CompareWithLastMessages(struct Message message, struct Message savedMessages[]);
 
 int main(void)
 {
     FILE *outputFile = fopen("TextFiles/Output.txt", "w");
     FILE *inputFile = fopen("TextFiles/Cryaotic_ChatLog_21-11.txt", "r");
     struct Message message;
+    struct Message savedMessages[NUMBER_OF_SAVED_MESSAGES];
     int scoreThreshold;
     int chatDelay=10;
     char streamerUsername[30];
@@ -50,13 +54,23 @@ int main(void)
     for(int i=0; i < numberOfMessages; i++)
     {
         ReadChatLog(&message, inputFile);
-        printf("timeStamp: %s\n", message.timeStamp);
-        printf("Username: %s\n", message.username);
-        printf("Message: %s\n\n\n",message.message);
+
         if(SingleChatterDelay(user, chatDelay, message)<chatDelay)
         	continue;
-        OutputToFile(message, outputFile);
+        if(i >= NUMBER_OF_SAVED_MESSAGES)
+        {
+            if(CompareWithLastMessages(message, savedMessages)==0)
+                continue;
+        }
+        OutputToFile(message, outputFile, savedMessages);
+        printf("%s\n", message.message);
     }
+
+    for(int i=0; i<NUMBER_OF_SAVED_MESSAGES; i++)
+    {
+        printf("%s\n", savedMessages[i].message);
+    }
+
 
     fclose(outputFile);
     return 0;
@@ -125,10 +139,12 @@ int CountAmountOfLines(char path[])
     return amountOfMessages;
 }
 
-void OutputToFile(struct Message message, FILE *outputFile)
+void OutputToFile(struct Message message, FILE *outputFile, struct Message savedMessages[])
 {
+    SaveMessage(message, savedMessages);
 	fprintf(outputFile,"[%s]%s : %s\n", message.timeStamp, message.username, message.message);
 }
+
 /*Checker om den nye bruger har skrevet før og om han må skrive igen.*/
 int SingleChatterDelay(struct Users user[], int chatDelay, struct Message newMessage){
 	int i;
@@ -157,4 +173,27 @@ int SingleChatterDelay(struct Users user[], int chatDelay, struct Message newMes
 		}
 	}
 	return result;
+}
+
+void SaveMessage(struct Message message, struct Message savedMessages[])
+{
+    /* Shift elements in array */
+    for(int k = NUMBER_OF_SAVED_MESSAGES-1; k > 0; k--)
+    {
+        savedMessages[k]=savedMessages[k-1];
+    }
+    /* Save new message */
+    savedMessages[0]=message;
+}
+
+int CompareWithLastMessages(struct Message message, struct Message savedMessages[])
+{
+    for(int i=0; i<NUMBER_OF_SAVED_MESSAGES; i++)
+    {
+        if(strcmp(message.message, savedMessages[i].message) == 0)
+        {
+            return 0;
+        }
+    }
+    return 1;
 }
