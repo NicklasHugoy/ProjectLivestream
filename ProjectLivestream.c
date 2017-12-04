@@ -10,6 +10,7 @@
 #include <stdlib.h>
 
 #define MAX_LINES 500
+#define MAX_UNIC_USERS 15
 
 struct Message
 {
@@ -22,7 +23,7 @@ struct Message
 struct Users
 {
 	char username[40];
-	int timestamp;
+	char timestamp[40];
 };
 
 void UserInputDialog(int *scoreThreshold, char streamerUsername[]);
@@ -30,6 +31,7 @@ int ConvertTimestamp(char timestamp[]);
 void ReadChatLog(struct Message *message, FILE* inputFile);
 int CountAmountOfLines(char path[]);
 void OutputToFile(struct Message message, FILE *outputFile);
+int SingleChatterDelay(struct Users user[], int chatDelay, struct Users newUser);
 
 int main(void)
 {
@@ -37,7 +39,9 @@ int main(void)
     FILE *inputFile = fopen("TextFiles/Cryaotic_ChatLog_21-11.txt", "r");
     struct Message message;
     int scoreThreshold;
+    int chatDelay;
     char streamerUsername[30];
+    struct Users user[MAX_UNIC_USERS];
 
     UserInputDialog(&scoreThreshold, streamerUsername);
 
@@ -123,4 +127,29 @@ int CountAmountOfLines(char path[])
 void OutputToFile(struct Message message, FILE *outputFile)
 {
 	fprintf(outputFile,"[%s]%s : %s\n", message.timeStamp, message.username, message.message);
+}
+/*Checker om den nye bruger har skrevet før og om han må skrive igen.*/
+int SingleChatterDelay(struct Users user[], int chatDelay, struct Users newUser){
+	int i;
+	int userindex = MAX_UNIC_USERS;
+	int result=1;
+	for(i=0; i<MAX_UNIC_USERS; i++)
+	{
+		if(strcmp(newUser.username, user[i].username)==0)
+		{
+			result = ConvertTimestamp(newUser.timestamp) - CountAmountOfLines(user[i].timestamp);
+			result = result > chatDelay;
+			userindex=i+1;
+		}
+	}
+	for(i=userindex-1; i>0; i--)
+	{
+		user[i]=user[i-1];
+		if(i==1)
+		{
+			user[i-1]=newUser;
+		}
+	}
+
+	return result;
 }
