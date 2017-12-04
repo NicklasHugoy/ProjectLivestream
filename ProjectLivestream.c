@@ -6,14 +6,10 @@
 /********************************/
 
 #include <stdio.h>
-<<<<<<< HEAD
 #include <string.h>
-#include <stdlib.h>
-=======
 #include <stdlib.h>
 
 #define MAX_LINES 500
->>>>>>> d96fba3bf7c68342ce41dc964d9f53858a1125ce
 
 struct User
 {
@@ -22,13 +18,10 @@ struct User
     char message[500];
 };
 
-<<<<<<< HEAD
-void ReadChatLog(FILE* inputFile, struct User users[]);
+
 int ConvertTimestamp(char timestamp[]);
-=======
 void ReadChatLog(struct User user, char path[]);
 int CountAmountOfLines(char path[]);
->>>>>>> d96fba3bf7c68342ce41dc964d9f53858a1125ce
 
 int main(void)
 {
@@ -36,12 +29,6 @@ int main(void)
     struct User user;
 
     ReadChatLog(user, "TextFiles/Cryaotic_ChatLog_21-11.txt");
-
-    for (int i = 0; i < 10; ++i)
-    {
-    	ConvertTimestamp(users[i].timeStamp);
-    }
-
     fclose(outputFile);
     return 0;
 }
@@ -69,8 +56,7 @@ void ReadChatLog(struct User user, char path[])
     fclose(inputFile);
 }
 
-<<<<<<< HEAD
-
+/*convert timestamp to int of seconds*/
 int ConvertTimestamp(char timestamp[])
 {
 	const int MIN = 60;
@@ -86,7 +72,6 @@ int ConvertTimestamp(char timestamp[])
 	return results;
 
 }
-=======
 /* Returns the amount of lines in the inputFIle */
 int CountAmountOfLines(char path[])
 {
@@ -112,4 +97,3 @@ int CountAmountOfLines(char path[])
     fclose(inputFile);
     return amountOfMessages;
 }
->>>>>>> d96fba3bf7c68342ce41dc964d9f53858a1125ce
