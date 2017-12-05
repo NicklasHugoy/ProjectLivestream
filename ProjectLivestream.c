@@ -9,7 +9,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define MAX_LINES 500
 #define MAX_UNIC_USERS 15
 #define NUMBER_OF_SAVED_MESSAGES 5
 
@@ -17,7 +16,7 @@ struct Message
 {
     char username[40];
     char timeStamp[40];
-    char message[500];
+    char message[2001];
     int points;
 };
 
@@ -29,8 +28,7 @@ struct Users
 
 void UserInputDialog(int *scoreThreshold, char streamerUsername[]);
 int ConvertTimestamp(char timestamp[]);
-void ReadChatLog(struct Message *message, FILE* inputFile);
-int CountAmountOfLines(char path[]);
+void ReadChatLog(struct Message *message, FILE* inputFile, int *hasReachedEndOfFile);
 int SingleChatterDelay(struct Users user[], int chatDelay, struct Message newMessage);
 void OutputToFile(struct Message message, FILE *outputFile, struct Message savedMessages[]);
 void SaveMessage(struct Message message, struct Message savedMessages[]);
@@ -39,33 +37,27 @@ int CompareWithLastMessages(struct Message message, struct Message savedMessages
 int main(void)
 {
     FILE *outputFile = fopen("TextFiles/Output.txt", "w");
-    FILE *inputFile = fopen("TextFiles/Cryaotic_ChatLog_21-11.txt", "r");
+    FILE *inputFile = fopen("TextFiles/ForsenLoL_ChatLog_29-10.txt", "r");
     struct Message message;
     struct Message savedMessages[NUMBER_OF_SAVED_MESSAGES];
-    int scoreThreshold;
-    int chatDelay=10;
+    int scoreThreshold, chatDelay=10, hasReachedEndOfFile;
     char streamerUsername[30];
     struct Users user[MAX_UNIC_USERS];
 
     UserInputDialog(&scoreThreshold, streamerUsername);
 
-    int numberOfMessages = CountAmountOfLines("TextFiles/Cryaotic_ChatLog_21-11.txt");
-
-    for(int i=0; i < numberOfMessages; i++)
+    while(hasReachedEndOfFile != 1)
     {
-        ReadChatLog(&message, inputFile);
-
-        if(SingleChatterDelay(user, chatDelay, message)<chatDelay)
-        	continue;
-        if(i >= NUMBER_OF_SAVED_MESSAGES)
+        ReadChatLog(&message, inputFile, &hasReachedEndOfFile);
+        if(hasReachedEndOfFile != 1)
         {
+            if(SingleChatterDelay(user, chatDelay, message)<chatDelay)
+                continue;
             if(CompareWithLastMessages(message, savedMessages)==0)
                 continue;
+            OutputToFile(message, outputFile, savedMessages);
         }
-        OutputToFile(message, outputFile, savedMessages);
     }
-
-
     fclose(outputFile);
     return 0;
 }
@@ -78,12 +70,19 @@ void UserInputDialog(int *scoreThreshold, char streamerUsername[])
     scanf("%s", streamerUsername);
 }
 
-void ReadChatLog(struct Message *message, FILE* inputFile)
+void ReadChatLog(struct Message *message, FILE* inputFile, int *hasReachedEndOfFile)
 {
     if(inputFile != NULL)
     {
-        fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: %[^\n]",
-            message->timeStamp, message->username, message->message);
+        if(fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: %[^\n]",
+            message->timeStamp, message->username, message->message)==3)
+        {
+            *hasReachedEndOfFile = 0;
+        }
+        else
+        {
+            *hasReachedEndOfFile = 1;
+        }
     }
     else
     {
@@ -107,36 +106,11 @@ int ConvertTimestamp(char timestamp[])
 	return results;
 
 }
-/* Returns the amount of lines in the inputFIle */
-int CountAmountOfLines(char path[])
-{
-    FILE *inputFile = fopen(path, "r");
-    int amountOfMessages = 0, scanres;
-    char buffer[MAX_LINES];
-
-
-    if(inputFile != NULL)
-    {
-        scanres = fscanf(inputFile, " [%[^\n]", buffer);
-        while(scanres == 1)
-        {
-            amountOfMessages++;
-            scanres = fscanf(inputFile, " [%[^\n]", buffer);
-        }
-    }
-    else
-    {
-        printf("Problem with file, exiting program...\n");
-        exit(EXIT_FAILURE);
-    }
-    fclose(inputFile);
-    return amountOfMessages;
-}
 
 void OutputToFile(struct Message message, FILE *outputFile, struct Message savedMessages[])
 {
     SaveMessage(message, savedMessages);
-	fprintf(outputFile,"[%s]%s : %s\n", message.timeStamp, message.username, message.message);
+	fprintf(outputFile,"[%s] %s: %s\n", message.timeStamp, message.username, message.message);
 }
 
 /*Checker om den nye bruger har skrevet før og om han må skrive igen.*/
