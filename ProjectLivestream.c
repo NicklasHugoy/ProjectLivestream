@@ -26,6 +26,12 @@ struct Users
 	char timeStamp[40];
 };
 
+struct Config
+{
+    int amountOfWords;
+    char **words;
+};
+
 void UserInputDialog(int *scoreThreshold, char streamerUsername[]);
 int ConvertTimestamp(char timestamp[]);
 void ReadChatLog(struct Message *message, FILE* inputFile, int *hasReachedEndOfFile);
@@ -33,6 +39,7 @@ int SingleChatterDelay(struct Users user[], int chatDelay, struct Message newMes
 void OutputToFile(struct Message message, FILE *outputFile, struct Message savedMessages[]);
 void SaveMessage(struct Message message, struct Message savedMessages[]);
 int CompareWithLastMessages(struct Message message, struct Message savedMessages[]);
+struct Config getConfig(char filePath[]);
 
 int main(void)
 {
@@ -59,7 +66,53 @@ int main(void)
         }
     }
     fclose(outputFile);
+
+    struct Config configFile = getConfig("TextFiles/config.txt");
+
+    printf("amount: %d\n", configFile.amountOfWords);
+    printf("text: %s\n", configFile.words[0]);
+
     return 0;
+}
+
+struct Config getConfig(char filePath[])
+{
+    FILE *configFile = fopen(filePath, "r");
+    struct Config configStruct;
+
+    if(configFile != NULL)
+    {
+        char line[1024];
+        int i=0, amountOfWords;
+
+        while(fgets(line, sizeof(line), configFile) != NULL)
+        {
+            if(i==0)
+            {
+                sscanf(line, " Number_of_whitelisted_words = %d", &amountOfWords);
+                configStruct.amountOfWords = amountOfWords;
+            }
+            else if(i==1)
+            {
+                int bytes_now;
+                int bytes_consumed=0;
+                char *test;
+
+                test = strchr(line, '=')+1;
+
+                configStruct.words = malloc(amountOfWords * sizeof(char*));
+                for(int j=0; j<amountOfWords; j++)
+                {
+                    configStruct.words[j] = malloc(10);
+                    sscanf(test+bytes_consumed, " %s%n", configStruct.words[j], &bytes_now);
+                    bytes_consumed += bytes_now;
+                }
+            }
+            i++;
+        }
+    }
+
+    return configStruct;
 }
 
 void UserInputDialog(int *scoreThreshold, char streamerUsername[])
