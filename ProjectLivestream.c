@@ -286,7 +286,7 @@ int CheckMessage(FILE *inputFile)
     {
         return 0;
     }
-    fseek(inputFile, messageStart+1, SEEK_SET);
+    fseek(inputFile, messageStart, SEEK_SET);
     return 1;
 
 }
@@ -316,5 +316,10 @@ int ContainsWord(struct Message message, char *word)
 {
     if(strstr(message.message, word))
         return 1;
+    return 0;
+}
+
+int CalculatePoints(struct Message message, struct Config configFile)
+{
     return 0;
 }
