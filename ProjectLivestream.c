@@ -43,6 +43,8 @@ int CompareWithLastMessages(struct Message message, struct Message savedMessages
 struct Config GetConfig(char filePath[]);
 int ContainsWhiteListedWords(struct Message message, struct Config config);
 int OnlyNumber(char *input);
+int ContainsWord(struct Message message, char *word);
+int MentionsStreamer(struct Message message, char *username);
 
 int main(void)
 {
@@ -257,8 +259,25 @@ int ContainsWhiteListedWords(struct Message message, struct Config config)
     for(int i=0; i<config.amountOfWords; i++)
     {
         /* If message contains the word return 1 */
-        if(strstr(message.message, config.words[i]))
+        if(ContainsWord(message, config.words[i]))
             return 1;
     }
+    return 0;
+}
+
+int MentionsStreamer(struct Message message, char *username)
+{
+    char mention[strlen(username)+1];
+
+    mention[0] = '@';
+    strcpy(mention+1, username);
+
+    return ContainsWord(message, mention);
+}
+
+int ContainsWord(struct Message message, char *word)
+{
+    if(strstr(message.message, word))
+        return 1;
     return 0;
 }
