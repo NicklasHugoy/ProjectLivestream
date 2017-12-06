@@ -40,6 +40,7 @@ void OutputToFile(struct Message message, FILE *outputFile, struct Message saved
 void SaveMessage(struct Message message, struct Message savedMessages[]);
 int CompareWithLastMessages(struct Message message, struct Message savedMessages[]);
 struct Config GetConfig(char filePath[]);
+int ContainsWhiteListedWords(struct Message message, struct Config config);
 
 int main(void)
 {
@@ -52,6 +53,8 @@ int main(void)
     struct Users user[MAX_UNIC_USERS];
 
     UserInputDialog(&scoreThreshold, streamerUsername);
+
+    struct Config configFile = GetConfig("TextFiles/config.txt");
 
     while(hasReachedEndOfFile != 1)
     {
@@ -66,8 +69,6 @@ int main(void)
         }
     }
     fclose(outputFile);
-
-    struct Config configFile = GetConfig("TextFiles/config.txt");
 
     printf("amount: %d\n", configFile.amountOfWords);
     printf("text: %s\n", configFile.words[0]);
@@ -225,4 +226,15 @@ int CompareWithLastMessages(struct Message message, struct Message savedMessages
         }
     }
     return 1;
+}
+
+int ContainsWhiteListedWords(struct Message message, struct Config config)
+{
+    for(int i=0; i<config.amountOfWords; i++)
+    {
+        /* If message contains the word return 1 */
+        if(strstr(message.message, config.words[i]))
+            return 1;
+    }
+    return 0;
 }
