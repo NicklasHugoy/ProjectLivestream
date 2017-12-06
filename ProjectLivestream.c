@@ -16,7 +16,7 @@ struct Message
 {
     char username[40];
     char timeStamp[40];
-    char message[2001];
+    char message[501];
     int points;
 };
 
@@ -129,10 +129,11 @@ void UserInputDialog(int *scoreThreshold, char streamerUsername[])
 
 void ReadChatLog(struct Message *message, FILE* inputFile, int *hasReachedEndOfFile)
 {
+    char localMessage[2001];
     if(inputFile != NULL)
     {
         if(fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: %[^\n]",
-            message->timeStamp, message->username, message->message)==3)
+            message->timeStamp, message->username, localMessage)==3)
         {
             *hasReachedEndOfFile = 0;
         }
@@ -140,6 +141,8 @@ void ReadChatLog(struct Message *message, FILE* inputFile, int *hasReachedEndOfF
         {
             *hasReachedEndOfFile = 1;
         }
+
+        sscanf(localMessage, " %[ -~]", message->message);
     }
     else
     {
