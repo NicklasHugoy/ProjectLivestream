@@ -1,16 +1,16 @@
-/********************************/
-/* Analyse af livestream data   */
-/*          DAT - A412          */
-/*                              */
-/*         20/12 - 2017         */
-/********************************/
+/********************************
+ * Analyse af livestream data   *
+ *          DAT - A412          *
+ *                              *
+ *         20/12 - 2017         *
+ ********************************/
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 
-#define MAX_UNIC_USERS 15
+#define MAX_UNIQUE_USERS 15
 #define NUMBER_OF_SAVED_MESSAGES 5
 
 struct Message
@@ -58,7 +58,7 @@ int main(void)
     struct Message savedMessages[NUMBER_OF_SAVED_MESSAGES];
     int scoreThreshold, chatDelay=10, hasReachedEndOfFile;
     char streamerUsername[30];
-    struct Users user[MAX_UNIC_USERS];
+    struct Users user[MAX_UNIQUE_USERS];
 
     UserInputDialog(&scoreThreshold, streamerUsername);
 
@@ -217,14 +217,14 @@ void OutputToFile(struct Message message, FILE *outputFile, struct Message saved
 /*Checker om den nye bruger har skrevet før og om han må skrive igen.*/
 int SingleChatterDelay(struct Users user[], int chatDelay, struct Message newMessage){
 	int i;
-	int userindex = MAX_UNIC_USERS;
+	int userindex = MAX_UNIQUE_USERS;
 	int result=chatDelay+1;
 	struct Users newUser;
 
 	strcpy(newUser.username, newMessage.username);
 	strcpy(newUser.timeStamp, newMessage.timeStamp);
 
-	for(i=0; i<MAX_UNIC_USERS; i++)
+	for(i=0; i<MAX_UNIQUE_USERS; i++)
 	{
 		if(strcmp(newUser.username, user[i].username)==0)
 		{
