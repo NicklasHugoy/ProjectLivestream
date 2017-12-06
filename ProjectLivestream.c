@@ -37,7 +37,7 @@ void UserInputDialog(int *scoreThreshold, char streamerUsername[]);
 int ConvertTimestamp(char timestamp[]);
 void ReadChatLog(struct Message *message, FILE* inputFile, int *hasReachedEndOfFile);
 int SingleChatterDelay(struct Users user[], int chatDelay, struct Message newMessage);
-void OutputToFile(struct Message message, FILE *outputFile, struct Message savedMessages[]);
+void OutputToFile(struct Message message, FILE *outputFile, struct Message savedMessages[], int chatDelay, struct Users user[]);
 void SaveMessage(struct Message message, struct Message savedMessages[]);
 int CompareWithLastMessages(struct Message message, struct Message savedMessages[]);
 struct Config GetConfig(char filePath[]);
@@ -63,11 +63,9 @@ int main(void)
         ReadChatLog(&message, inputFile, &hasReachedEndOfFile);
         if(hasReachedEndOfFile != 1)
         {
-            if(SingleChatterDelay(user, chatDelay, message)<chatDelay)
-                continue;
             if(CompareWithLastMessages(message, savedMessages)==0)
                 continue;
-            OutputToFile(message, outputFile, savedMessages);
+            OutputToFile(message, outputFile, savedMessages, chatDelay, user);
         }
     }
     fclose(outputFile);
@@ -192,10 +190,13 @@ int ConvertTimestamp(char timestamp[])
 
 }
 
-void OutputToFile(struct Message message, FILE *outputFile, struct Message savedMessages[])
+void OutputToFile(struct Message message, FILE *outputFile, struct Message savedMessages[], int chatDelay, struct Users user[])
 {
-    SaveMessage(message, savedMessages);
-	fprintf(outputFile,"[%s] %s: %s\n", message.timeStamp, message.username, message.message);
+    if(SingleChatterDelay(user, chatDelay, message)>chatDelay)
+    {
+        SaveMessage(message, savedMessages);
+        fprintf(outputFile,"[%s] %s: %s\n", message.timeStamp, message.username, message.message);
+    }
 }
 
 /*Checker om den nye bruger har skrevet før og om han må skrive igen.*/
