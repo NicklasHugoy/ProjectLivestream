@@ -31,6 +31,8 @@ struct Config
 {
     int amountOfWords;
     char **words;
+    int mentionsScore;
+    int whitelistScore;
 };
 
 void UserInputDialog(int *scoreThreshold, char streamerUsername[]);
@@ -46,6 +48,7 @@ int ContainsWhiteListedWords(struct Message message, struct Config config);
 int OnlyNumber(char *input);
 int ContainsWord(struct Message message, char *word);
 int MentionsStreamer(struct Message message, char *username);
+int CalculatePoints(struct Message message, struct Config configFile, char *username);
 
 int main(void)
 {
@@ -68,14 +71,11 @@ int main(void)
         {
             if(CompareWithLastMessages(message, savedMessages)==0)
                 continue;
-            OutputToFile(message, outputFile, savedMessages, chatDelay, user);
+            if(CalculatePoints(message, configFile, streamerUsername) >= scoreThreshold)
+                OutputToFile(message, outputFile, savedMessages, chatDelay, user);
         }
     }
     fclose(outputFile);
-
-    printf("amount: %d\n", configFile.amountOfWords);
-    printf("text: %s\n", configFile.words[0]);
-
     return 0;
 }
 
@@ -87,35 +87,42 @@ struct Config GetConfig(char filePath[])
 
     if(configFile != NULL)
     {
-        char line[1024];
+        char line[1024], *information;
         int i=0, amountOfWords;
 
         /* reads one line at a time */
         while(fgets(line, sizeof(line), configFile) != NULL)
         {
+            /* Pointer to part of string after '=' */
+            information = strchr(line, '=')+1;
+
             /* First line in config file */
             if(i==0) /*  Amount of whitelisted words */
             {
-                sscanf(line, " Number_of_whitelisted_words = %d", &amountOfWords);
+                sscanf(information, " %d", &amountOfWords);
                 configStruct.amountOfWords = amountOfWords;
             }
             else if(i==1) /* Whitelisted words */
             {
                 int bytesNow;
                 int bytesConsumed=0;
-                char *test;
-
-                /* Pointer to part of string after '=' */
-                test = strchr(line, '=')+1;
 
                 configStruct.words = malloc(amountOfWords * sizeof(char*));
                 for(int j=0; j<amountOfWords; j++)
                 {
                     configStruct.words[j] = malloc(10);
                     /* Returns amount of bytes consumed to be able to continue from were it stoped */
-                    sscanf(test+bytesConsumed, " %s%n", configStruct.words[j], &bytesNow);
+                    sscanf(information+bytesConsumed, " %s%n", configStruct.words[j], &bytesNow);
                     bytesConsumed += bytesNow;
                 }
+            }
+            else if(i==2)
+            {
+                sscanf(information, " %d", &configStruct.mentionsScore);
+            }
+            else if(i==3)
+            {
+                sscanf(information, " %d", &configStruct.whitelistScore);
             }
             i++;
         }
@@ -319,7 +326,12 @@ int ContainsWord(struct Message message, char *word)
     return 0;
 }
 
-int CalculatePoints(struct Message message, struct Config configFile)
+int CalculatePoints(struct Message message, struct Config configFile, char *username)
 {
-    return 0;
+    int points=0;
+    if(ContainsWhiteListedWords(message, configFile))
+        points+=configFile.whitelistScore;
+    if(MentionsStreamer(message, username))
+        points+=configFile.mentionsScore;
+    return points;
 }

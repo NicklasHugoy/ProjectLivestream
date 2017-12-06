@@ -1,2 +1,4 @@
 Number_of_whitelisted_words 	= 4
 Whitelisted_words 		        = who what where when
+Score_for_mentions              = 1
+Score_for_whitelisted_words     = 1
