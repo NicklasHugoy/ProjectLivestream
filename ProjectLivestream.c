@@ -116,6 +116,7 @@ struct Config GetConfig(char filePath[])
             i++;
         }
     }
+    fclose(configFile);
     return configStruct;
 }
 
