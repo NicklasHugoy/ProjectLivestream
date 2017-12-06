@@ -39,7 +39,7 @@ int SingleChatterDelay(struct Users user[], int chatDelay, struct Message newMes
 void OutputToFile(struct Message message, FILE *outputFile, struct Message savedMessages[]);
 void SaveMessage(struct Message message, struct Message savedMessages[]);
 int CompareWithLastMessages(struct Message message, struct Message savedMessages[]);
-struct Config getConfig(char filePath[]);
+struct Config GetConfig(char filePath[]);
 
 int main(void)
 {
@@ -67,7 +67,7 @@ int main(void)
     }
     fclose(outputFile);
 
-    struct Config configFile = getConfig("TextFiles/config.txt");
+    struct Config configFile = GetConfig("TextFiles/config.txt");
 
     printf("amount: %d\n", configFile.amountOfWords);
     printf("text: %s\n", configFile.words[0]);
@@ -75,7 +75,8 @@ int main(void)
     return 0;
 }
 
-struct Config getConfig(char filePath[])
+/* Reads config file and returns Config struct with the settings */
+struct Config GetConfig(char filePath[])
 {
     FILE *configFile = fopen(filePath, "r");
     struct Config configStruct;
@@ -85,33 +86,36 @@ struct Config getConfig(char filePath[])
         char line[1024];
         int i=0, amountOfWords;
 
+        /* reads one line at a time */
         while(fgets(line, sizeof(line), configFile) != NULL)
         {
-            if(i==0)
+            /* First line in config file */
+            if(i==0) /*  Amount of whitelisted words */
             {
                 sscanf(line, " Number_of_whitelisted_words = %d", &amountOfWords);
                 configStruct.amountOfWords = amountOfWords;
             }
-            else if(i==1)
+            else if(i==1) /* Whitelisted words */
             {
-                int bytes_now;
-                int bytes_consumed=0;
+                int bytesNow;
+                int bytesConsumed=0;
                 char *test;
 
+                /* Pointer to part of string after '=' */
                 test = strchr(line, '=')+1;
 
                 configStruct.words = malloc(amountOfWords * sizeof(char*));
                 for(int j=0; j<amountOfWords; j++)
                 {
                     configStruct.words[j] = malloc(10);
-                    sscanf(test+bytes_consumed, " %s%n", configStruct.words[j], &bytes_now);
-                    bytes_consumed += bytes_now;
+                    /* Returns amount of bytes consumed to be able to continue from were it stoped */
+                    sscanf(test+bytesConsumed, " %s%n", configStruct.words[j], &bytesNow);
+                    bytesConsumed += bytesNow;
                 }
             }
             i++;
         }
     }
-
     return configStruct;
 }
 
