@@ -35,6 +35,7 @@ struct Config
     int whitelistScore;
     int scoreThreshold;
     char username[20];
+    int chatDelay;
 };
 
 void UserInputDialog(int *scoreThreshold, char streamerUsername[]);
@@ -58,7 +59,7 @@ int main(void)
     FILE *inputFile = fopen("TextFiles/ForsenLoL_ChatLog_29-10.txt", "r");
     struct Message message;
     struct Message savedMessages[NUMBER_OF_SAVED_MESSAGES];
-    int chatDelay=10, hasReachedEndOfFile;
+    int hasReachedEndOfFile;
     struct Users user[MAX_UNIQUE_USERS];
 
     struct Config configFile = GetConfig("TextFiles/config.txt");
@@ -69,9 +70,9 @@ int main(void)
         if(hasReachedEndOfFile != 1)
         {
             if(CompareWithLastMessages(message, savedMessages)==0)
-                message.score -= 1;
+                message.score -= 2;
             if(CalculatePoints(message, configFile) >= configFile.scoreThreshold)
-                OutputToFile(message, outputFile, savedMessages, chatDelay, user);
+                OutputToFile(message, outputFile, savedMessages, configFile.chatDelay, user);
         }
     }
     fclose(outputFile);
@@ -130,6 +131,10 @@ struct Config GetConfig(char filePath[])
             else if(i==5)
             {
                 sscanf(information, " %s", configStruct.username);
+            }
+            else if(i==6)
+            {
+                sscanf(information, " %d", &configStruct.chatDelay);
             }
             i++;
         }

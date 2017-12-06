@@ -4,3 +4,4 @@ Score_for_mentions              = 1
 Score_for_whitelisted_words     = 1
 Score_required                  = 0
 Streamer_username               = Forsenlol
+Chat Delay in seconds           = 10
