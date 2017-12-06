@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #define MAX_UNIC_USERS 15
 #define NUMBER_OF_SAVED_MESSAGES 5
@@ -41,6 +42,7 @@ void SaveMessage(struct Message message, struct Message savedMessages[]);
 int CompareWithLastMessages(struct Message message, struct Message savedMessages[]);
 struct Config GetConfig(char filePath[]);
 int ContainsWhiteListedWords(struct Message message, struct Config config);
+int OnlyNumber(char *input);
 
 int main(void)
 {
@@ -123,10 +125,31 @@ struct Config GetConfig(char filePath[])
 
 void UserInputDialog(int *scoreThreshold, char streamerUsername[])
 {
-    printf("Please enter score threshold: ");
-    scanf("%d", scoreThreshold);
+    char tempChar[10];
+
+    /* Prompter for input til point grænse, input tager kun imod tal */
+    do
+    {
+      printf("Enter number for point limit: ");
+      scanf(" %s", tempChar);
+    }
+    while(OnlyNumber(tempChar) != 1);
+
+    *scoreThreshold = atoi(tempChar);
+
     printf("Please enter your username: ");
     scanf("%s", streamerUsername);
+}
+
+/* Funktion, som tjekker efter bogstaver i input */
+int OnlyNumber(char *input)
+{
+  for(int i = 0; input[i] != '\0'; i++)
+  {
+    if(isdigit(input[i]) == 0)
+      return 0;
+  }
+  return 1;
 }
 
 void ReadChatLog(struct Message *message, FILE* inputFile, int *hasReachedEndOfFile)
