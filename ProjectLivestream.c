@@ -18,7 +18,7 @@ struct Message
     char username[40];
     char timeStamp[40];
     char message[501];
-    int points;
+    int score;
 };
 
 struct Users
@@ -33,6 +33,8 @@ struct Config
     char **words;
     int mentionsScore;
     int whitelistScore;
+    int scoreThreshold;
+    char username[20];
 };
 
 void UserInputDialog(int *scoreThreshold, char streamerUsername[]);
@@ -48,7 +50,7 @@ int ContainsWhiteListedWords(struct Message message, struct Config config);
 int OnlyNumber(char *input);
 int ContainsWord(struct Message message, char *word);
 int MentionsStreamer(struct Message message, char *username);
-int CalculatePoints(struct Message message, struct Config configFile, char *username);
+int CalculatePoints(struct Message message, struct Config configFile);
 
 int main(void)
 {
@@ -56,11 +58,8 @@ int main(void)
     FILE *inputFile = fopen("TextFiles/ForsenLoL_ChatLog_29-10.txt", "r");
     struct Message message;
     struct Message savedMessages[NUMBER_OF_SAVED_MESSAGES];
-    int scoreThreshold, chatDelay=10, hasReachedEndOfFile;
-    char streamerUsername[30];
+    int chatDelay=10, hasReachedEndOfFile;
     struct Users user[MAX_UNIQUE_USERS];
-
-    UserInputDialog(&scoreThreshold, streamerUsername);
 
     struct Config configFile = GetConfig("TextFiles/config.txt");
 
@@ -70,8 +69,8 @@ int main(void)
         if(hasReachedEndOfFile != 1)
         {
             if(CompareWithLastMessages(message, savedMessages)==0)
-                continue;
-            if(CalculatePoints(message, configFile, streamerUsername) >= scoreThreshold)
+                message.score -= 1;
+            if(CalculatePoints(message, configFile) >= configFile.scoreThreshold)
                 OutputToFile(message, outputFile, savedMessages, chatDelay, user);
         }
     }
@@ -124,40 +123,19 @@ struct Config GetConfig(char filePath[])
             {
                 sscanf(information, " %d", &configStruct.whitelistScore);
             }
+            else if(i==4)
+            {
+                sscanf(information, " %d", &configStruct.scoreThreshold);
+            }
+            else if(i==5)
+            {
+                sscanf(information, " %s", configStruct.username);
+            }
             i++;
         }
     }
     fclose(configFile);
     return configStruct;
-}
-
-void UserInputDialog(int *scoreThreshold, char streamerUsername[])
-{
-    char tempChar[10];
-
-    /* Prompter for input til point grænse, input tager kun imod tal */
-    do
-    {
-      printf("Enter number for point limit: ");
-      scanf(" %s", tempChar);
-    }
-    while(OnlyNumber(tempChar) != 1);
-
-    *scoreThreshold = atoi(tempChar);
-
-    printf("Please enter your username: ");
-    scanf("%s", streamerUsername);
-}
-
-/* Funktion, som tjekker efter bogstaver i input */
-int OnlyNumber(char *input)
-{
-  for(int i = 0; input[i] != '\0'; i++)
-  {
-    if(isdigit(input[i]) == 0)
-      return 0;
-  }
-  return 1;
 }
 
 void ReadChatLog(struct Message *message, FILE* inputFile, int *hasReachedEndOfFile)
@@ -217,7 +195,7 @@ void OutputToFile(struct Message message, FILE *outputFile, struct Message saved
 /*Checker om den nye bruger har skrevet før og om han må skrive igen.*/
 int SingleChatterDelay(struct Users user[], int chatDelay, struct Message newMessage){
 	int i;
-	int userindex = MAX_UNIQUE_USERS;
+	int userindex = MAX_UNIQUE_USERS-1;
 	int result=chatDelay+1;
 	struct Users newUser;
 
@@ -229,18 +207,24 @@ int SingleChatterDelay(struct Users user[], int chatDelay, struct Message newMes
 		if(strcmp(newUser.username, user[i].username)==0)
 		{
 			result = ConvertTimestamp(newUser.timeStamp) - ConvertTimestamp(user[i].timeStamp);
-			userindex=i+1;
+			userindex=i;
 			break;
 		}
 	}
-	for(i=userindex-1; i>0; i--)
-	{
-		user[i]=user[i-1];
-		if(i==1)
-		{
-			user[i-1]=newUser;
-		}
-	}
+    if(result > chatDelay)
+    {
+        for(i=userindex; i>=0; i--)
+    	{
+    		if(i==0)
+    		{
+    			user[i]=newUser;
+    		}
+            else
+            {
+                user[i]=user[i-1];
+            }
+    	}
+    }
 	return result;
 }
 
@@ -326,12 +310,12 @@ int ContainsWord(struct Message message, char *word)
     return 0;
 }
 
-int CalculatePoints(struct Message message, struct Config configFile, char *username)
+int CalculatePoints(struct Message message, struct Config configFile)
 {
     int points=0;
     if(ContainsWhiteListedWords(message, configFile))
         points+=configFile.whitelistScore;
-    if(MentionsStreamer(message, username))
+    if(MentionsStreamer(message, configFile.username))
         points+=configFile.mentionsScore;
     return points;
 }
