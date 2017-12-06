@@ -16,7 +16,7 @@ struct Message
 {
     char username[40];
     char timeStamp[40];
-    char message[2001];
+    char message[501];
     int points;
 };
 
@@ -40,6 +40,7 @@ void OutputToFile(struct Message message, FILE *outputFile, struct Message saved
 void SaveMessage(struct Message message, struct Message savedMessages[]);
 int CompareWithLastMessages(struct Message message, struct Message savedMessages[]);
 struct Config getConfig(char filePath[]);
+int CheckMessage(FILE *inputFile);
 
 int main(void)
 {
@@ -127,8 +128,8 @@ void ReadChatLog(struct Message *message, FILE* inputFile, int *hasReachedEndOfF
 {
     if(inputFile != NULL)
     {
-        if(fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: %[^\n]",
-            message->timeStamp, message->username, message->message)==3)
+        if(fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: ",
+            message->timeStamp, message->username)==2)
         {
             *hasReachedEndOfFile = 0;
         }
@@ -139,8 +140,17 @@ void ReadChatLog(struct Message *message, FILE* inputFile, int *hasReachedEndOfF
     }
     else
     {
+
         printf("Problem with file, exiting program...\n");
         exit(EXIT_FAILURE);
+    }
+    if(CheckMessage(inputFile))
+    {
+        fscanf(inputFile, "%[^\n]", message->message);
+    }
+    else
+    {
+        strcpy(message->message,"ERROR - Problematic characters - ERROR");
     }
 }
 
@@ -217,4 +227,34 @@ int CompareWithLastMessages(struct Message message, struct Message savedMessages
         }
     }
     return 1;
+}
+
+int CheckMessage(FILE *inputFile)
+{
+    int messageStart = ftell(inputFile);
+    int messageEnd;
+    int messageLenght;
+    int currentChar;
+    char normalText[]="abcdefghijklmnopqrstuvwxyz,!:;=+- ?.ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    int falseChars=0;
+    while(currentChar != '\n')
+    {
+        currentChar = fgetc(inputFile);
+
+        if(strchr(normalText, currentChar)==NULL)
+            {
+                falseChars++;
+            }
+        if(currentChar==EOF)
+            break;
+    }
+    messageEnd = ftell(inputFile);
+    messageLenght = messageEnd - messageStart;
+    if((messageLenght/falseChars)<=2)
+    {
+        return 0;
+    }
+    fseek(inputFile, messageStart+1, SEEK_SET);
+    return 1;
+
 }
