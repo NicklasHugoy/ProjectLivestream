@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <assert.h>
 
 #define MAX_UNIQUE_USERS 15
 #define NUMBER_OF_SAVED_MESSAGES 5
@@ -52,6 +53,8 @@ int OnlyNumber(char *input);
 int ContainsWord(struct Message message, char *word);
 int MentionsStreamer(struct Message message, char *username);
 int CalculatePoints(struct Message message, struct Config configFile);
+int MessageSpamDetection(struct Message message, int filter);
+
 
 int main(void)
 {
@@ -69,6 +72,7 @@ int main(void)
         ReadChatLog(&message, inputFile, &hasReachedEndOfFile);
         if(hasReachedEndOfFile != 1)
         {
+            MessageSpamDetection(message, 2);
             if(CompareWithLastMessages(message, savedMessages)==0)
                 message.score -= 2;
             if(CalculatePoints(message, configFile) >= configFile.scoreThreshold)
@@ -323,4 +327,88 @@ int CalculatePoints(struct Message message, struct Config configFile)
     if(MentionsStreamer(message, configFile.username))
         points+=configFile.mentionsScore;
     return points;
+}
+
+int MessageSpamDetection(struct Message message, int filter)
+{
+    struct OneWord
+    {
+        int wordlength;
+        char storedWord[];
+    };
+    int i;
+    int messageTotalLength;
+    int messageOffset=0;
+    int totalWords=1;
+    int currentWord=0;
+    int uniqueWords;
+    int wordStartPosition;
+    int wordEndPosition;
+    char tempword[100]="\0";
+    int singleWordlength=1;
+    int longestWord=0;
+    int *wordlength;
+    char *differentWords;
+    struct OneWord *SingleWords;
+
+
+
+    messageTotalLength=strlen(message.message);
+    printf("message length: %d\n", messageTotalLength);
+    printf("%s\n", message.message );
+
+    for(i=0; i<messageTotalLength; i++)
+    {
+        if(message.message[i]==' ')
+        {
+            if(message.message[i] != '\n')
+            {  
+                totalWords++;
+                if(longestWord<singleWordlength)
+                {
+                    longestWord=singleWordlength;
+                    singleWordlength=1;
+                }
+                else
+                {
+                    singleWordlength=1;
+                }
+            }
+        }
+        singleWordlength++;
+    }
+    printf("total words: %d and longestWord is %d \n", totalWords, longestWord);
+    SingleWords = malloc((totalWords * sizeof(struct OneWord)) + (longestWord * sizeof(char)));
+    if(SingleWords == NULL)
+    {
+        printf("Error allocating with Malloc for SingeWords\n");
+        assert(SingleWords == NULL);
+    }
+    for(i=0; i<messageTotalLength; i++)
+    {
+        
+    }
+  
+  /*  
+    for(i=0; i<totalWords; i++)
+    {
+        printf("ssss\n");
+        strncpy(SingleWords ,message.message+messageOffset, singleWordlength);
+        printf("ddd\n");
+        messageOffset+=strlen(tempword);
+        wordlength[i]=strlen(tempword);
+        printf("%s\n", tempword);
+        
+    }
+
+printf("Total words in text %d\n", totalWords);
+
+    for (int i = 0; i < totalWords; ++i)
+    {
+        printf("Time: %s User:%s : word %d is %d chars long\n", message.timeStamp, message.username, i, wordlength[i]);
+    }*/
+
+
+free (SingleWords);
+return 0;
 }
