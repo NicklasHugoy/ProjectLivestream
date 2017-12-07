@@ -336,78 +336,53 @@ int MessageSpamDetection(struct Message message, int filter)
         int wordlength;
         char storedWord[];
     };
-    int i;
+    int i, j=0;
     int messageTotalLength;
     int messageOffset=0;
-    int totalWords=1;
-    int currentWord=0;
-    int uniqueWords;
-    int wordStartPosition;
-    int wordEndPosition;
-    char tempword[100]="\0";
-    int singleWordlength=1;
+    int totalWords=0;
+    int singleWordlength=0;
     int longestWord=0;
-    int *wordlength;
-    char *differentWords;
     struct OneWord *SingleWords;
 
-
-
     messageTotalLength=strlen(message.message);
-    printf("message length: %d\n", messageTotalLength);
-    printf("%s\n", message.message );
 
     for(i=0; i<messageTotalLength; i++)
     {
-        if(message.message[i]==' ')
-        {
-            if(message.message[i] != '\n')
-            {  
-                totalWords++;
-                if(longestWord<singleWordlength)
-                {
-                    longestWord=singleWordlength;
-                    singleWordlength=1;
-                }
-                else
-                {
-                    singleWordlength=1;
-                }
-            }
-        }
         singleWordlength++;
+        if(message.message[i]==' ' || i==messageTotalLength-1)
+        {
+            totalWords++;
+            if(longestWord<singleWordlength-1)
+            {
+                longestWord=singleWordlength;
+            }
+            singleWordlength=0;
+        }
     }
-    printf("total words: %d and longestWord is %d \n", totalWords, longestWord);
+
     SingleWords = malloc((totalWords * sizeof(struct OneWord)) + (longestWord * sizeof(char)));
     if(SingleWords == NULL)
     {
         printf("Error allocating with Malloc for SingeWords\n");
         assert(SingleWords == NULL);
     }
+
     for(i=0; i<messageTotalLength; i++)
     {
-        
+        singleWordlength++;
+        if(message.message[i]==' ')
+        {
+            if(message.message[i] != '\n')
+            {
+                SingleWords[j].wordlength = singleWordlength;
+                strncpy(SingleWords[j].storedWord, message.message+messageOffset, singleWordlength);
+
+                j++;
+                messageOffset += singleWordlength;
+                singleWordlength=0;
+            }
+        }
     }
-  
-  /*  
-    for(i=0; i<totalWords; i++)
-    {
-        printf("ssss\n");
-        strncpy(SingleWords ,message.message+messageOffset, singleWordlength);
-        printf("ddd\n");
-        messageOffset+=strlen(tempword);
-        wordlength[i]=strlen(tempword);
-        printf("%s\n", tempword);
-        
-    }
-
-printf("Total words in text %d\n", totalWords);
-
-    for (int i = 0; i < totalWords; ++i)
-    {
-        printf("Time: %s User:%s : word %d is %d chars long\n", message.timeStamp, message.username, i, wordlength[i]);
-    }*/
-
 
 free (SingleWords);
 return 0;
