@@ -352,7 +352,7 @@ int MessageSpamDetection(struct Message message, int filter)
         if(message.message[i]==' ' || i==messageTotalLength-1)
         {
             totalWords++;
-            if(longestWord<singleWordlength-1)
+            if(longestWord<singleWordlength)
             {
                 longestWord=singleWordlength;
             }
@@ -376,7 +376,6 @@ int MessageSpamDetection(struct Message message, int filter)
             {
                 SingleWords[j].wordlength = singleWordlength;
                 strncpy(SingleWords[j].storedWord, message.message+messageOffset, singleWordlength);
-
                 j++;
                 messageOffset += singleWordlength;
                 singleWordlength=0;
