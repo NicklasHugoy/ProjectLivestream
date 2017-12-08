@@ -1,7 +1,7 @@
-Number of whitelisted words 	= 4
-Whitelisted words 		        = who what where when
-Score for mentions              = 1
-Score for whitelisted words     = 1
-Score required                  = 0
-Streamer username               = Forsenlol
-Chat Delay in seconds           = 10
+Number of whitelisted words    = 0
+Whitelisted words              = 
+Score for mentions             = 1
+Score for whitelisted words    = 0
+Score required                 = 0
+Streamer username              = username
+Chat Delay in seconds          = 10

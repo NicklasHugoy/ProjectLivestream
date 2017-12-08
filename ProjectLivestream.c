@@ -133,19 +133,27 @@ struct Config GetConfig(char filePath[])
             }
             i++;
         }
+        fclose(configFile);
     }
     else
     {
-        /* Default values if config file dosn't exist */
-        printf("Config file dosn't exist. Program will use default values\n");
-        configStruct.amountOfWords = 0;
-        configStruct.mentionsScore = 1;
-        configStruct.scoreThreshold = 0;
-        configStruct.username[0] = '\0';
-        configStruct.chatDelay = 10;
+        configFile = fopen(filePath, "w");
 
+        printf("Config file doesn't exist. Program creates a config file with default values\n");
+
+        /* Default values if config file dosn't exist */
+        fprintf(configFile, "Number of whitelisted words    = 0\n");
+        fprintf(configFile, "Whitelisted words              = \n");
+        fprintf(configFile, "Score for mentions             = 1\n");
+        fprintf(configFile, "Score for whitelisted words    = 0\n");
+        fprintf(configFile, "Score required                 = 0\n");
+        fprintf(configFile, "Streamer username              = username\n");
+        fprintf(configFile, "Chat Delay in seconds          = 10");
+
+        fclose(configFile);
+        return GetConfig(filePath);
     }
-    fclose(configFile);
+
     return configStruct;
 }
 
