@@ -172,7 +172,7 @@ void ReadChatLog(struct Message *message, FILE* inputFile, int *hasReachedEndOfF
     }
     else
     {
-        strcpy(message->message,"ERROR - Problematic characters - ERROR");
+        strcpy(message->message,"ERROR-Problematic-characters-ERROR");
     }
 }
 
@@ -360,7 +360,7 @@ int MessageSpamDetection(struct Message message, int filter)
         }
     }
 
-    SingleWords = malloc((totalWords * sizeof(struct OneWord)) + (longestWord * sizeof(char)));
+    SingleWords = malloc(totalWords * (sizeof(struct OneWord) + ((10+longestWord) * sizeof(char))));
     if(SingleWords == NULL)
     {
         printf("Error allocating with Malloc for SingeWords\n");
@@ -370,19 +370,34 @@ int MessageSpamDetection(struct Message message, int filter)
     for(i=0; i<messageTotalLength; i++)
     {
         singleWordlength++;
-        if(message.message[i]==' ')
+        if(message.message[i]==' ' || i==messageTotalLength-1)
         {
-            if(message.message[i] != '\n')
+            if(i==messageTotalLength-1 || singleWordlength == 1)
+            {
+                SingleWords[j].wordlength = singleWordlength;
+                if(i==messageTotalLength-1)
+                    {    
+                        strncpy(SingleWords[j].storedWord, message.message+messageOffset, singleWordlength);
+                        memset(SingleWords[j].storedWord+singleWordlength,'\0',1);
+                        printf("%s", SingleWords[j].storedWord);
+                    }
+                messageOffset = i;
+                singleWordlength=0;
+            }
+            else
             {
                 SingleWords[j].wordlength = singleWordlength;
                 strncpy(SingleWords[j].storedWord, message.message+messageOffset, singleWordlength);
+                memset(SingleWords[j].storedWord+singleWordlength,'\0',1);
+                printf("%s", SingleWords[j].storedWord);
+                messageOffset = i+1;
                 j++;
-                messageOffset += singleWordlength;
                 singleWordlength=0;
             }
+
         }
     }
-
+printf("\n");
 free (SingleWords);
 return 0;
 }
