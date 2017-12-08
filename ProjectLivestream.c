@@ -99,12 +99,13 @@ struct Config GetConfig(char filePath[])
             information = strchr(line, '=')+1;
 
             /* First line in config file */
-            switch(i) {
-              case 0: /*  Amount of whitelisted words */
+            switch(i)
+            {
+                case 0: /*  Amount of whitelisted words */
                   sscanf(information, " %d", &amountOfWords);
                   configStruct.amountOfWords = amountOfWords;
-              break;
-              case 1: /* Whitelisted words */
+                  break;
+                case 1: /* Whitelisted words */
                   configStruct.words = malloc(amountOfWords * sizeof(char*));
                   for(int j=0; j<amountOfWords; j++)
                   {
@@ -113,22 +114,22 @@ struct Config GetConfig(char filePath[])
                       sscanf(information+bytesConsumed, " %s%n", configStruct.words[j], &bytesNow);
                       bytesConsumed += bytesNow;
                   }
-              break;
-              case 2:
+                  break;
+                case 2:
                   sscanf(information, " %d", &configStruct.mentionsScore);
-              break;
-              case 3:
+                  break;
+                case 3:
                   sscanf(information, " %d", &configStruct.whitelistScore);
-              break;
-              case 4:
+                  break;
+                case 4:
                   sscanf(information, " %d", &configStruct.scoreThreshold);
-              break;
-              case 5:
+                  break;
+                case 5:
                   sscanf(information, " %s", configStruct.username);
-              break;
-              case 6:
+                  break;
+                case 6:
                   sscanf(information, " %d", &configStruct.chatDelay);
-              break;
+                  break;
             }
             i++;
         }
