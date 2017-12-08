@@ -64,6 +64,7 @@ int main(void)
 
     struct Config configFile = GetConfig("TextFiles/config.txt");
 
+    printf("Processing...\n");
     while(hasReachedEndOfFile != 1)
     {
         ReadChatLog(&line, inputFile, &hasReachedEndOfFile);
@@ -81,10 +82,11 @@ struct Config GetConfig(char filePath[])
 {
     FILE *configFile = fopen(filePath, "r");
     struct Config configStruct;
+    char line[1024];
 
     if(configFile != NULL)
     {
-        char line[1024], *information;
+        char *information;
         int i = 0, amountOfWords;
         int bytesNow;
         int bytesConsumed;
@@ -143,16 +145,23 @@ struct Config GetConfig(char filePath[])
     {
         configFile = fopen(filePath, "w");
 
-        printf("Config file doesn't exist. Program creates a config file with default values\n");
+        printf("Config file doesn't exist. Please enter values for config file\n");
 
         /* Default values if config file dosn't exist */
-        fprintf(configFile, "Number of whitelisted words    = 0\n");
-        fprintf(configFile, "Whitelisted words              = \n");
-        fprintf(configFile, "Score for mentions             = 1\n");
-        fprintf(configFile, "Score for whitelisted words    = 0\n");
-        fprintf(configFile, "Score required                 = 0\n");
-        fprintf(configFile, "Streamer username              = username\n");
-        fprintf(configFile, "Chat Delay in seconds          = 10");
+        printf("Number of whitelisted words: "); scanf(" %s", line);
+        fprintf(configFile, "Number of whitelisted words        = %s\n", line);
+        printf("Whitelisted words: "); scanf(" %[ -~]", line);
+        fprintf(configFile, "Whitelisted words                  = %s\n", line);
+        printf("Score for mentions : "); scanf(" %s", line);
+        fprintf(configFile, "Score for mentions                 = %s\n", line);
+        printf("Score for each whitelisted words: "); scanf(" %[0-9 ]", line);
+        fprintf(configFile, "Score for each whitelisted words   = %s\n", line);
+        printf("Score required: "); scanf(" %s", line);
+        fprintf(configFile, "Score required                     = %s\n", line);
+        printf("Streamer username: "); scanf(" %s", line);
+        fprintf(configFile, "Streamer username                  = %s\n", line);
+        printf("Chat Delay in seconds: "); scanf(" %s", line);
+        fprintf(configFile, "Chat Delay in seconds              = %s", line);
 
         fclose(configFile);
         return GetConfig(filePath);
@@ -362,10 +371,6 @@ int CalculatePoints(struct Line line, struct Config configFile)
 
     if(MentionsStreamer(line, configFile.username))
         points += configFile.mentionsScore;
-    if(points >= 999)
-    {
-        printf("%s\n", line.message);
-    }
 
     return points;
 }
