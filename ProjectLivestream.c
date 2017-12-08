@@ -69,7 +69,7 @@ int main(void)
         ReadChatLog(&line, inputFile, &hasReachedEndOfFile);
         if(hasReachedEndOfFile != 1)
         {
-            if(CompareWithLastMessages(line, savedMessages)==0)
+            if(CompareWithLastMessages(line, savedMessages))
                 line.score -= 2;
             if(CalculatePoints(line, configFile) >= configFile.scoreThreshold)
                 OutputToFile(line, outputFile, savedMessages, configFile.chatDelay, user);
@@ -143,6 +143,7 @@ struct Config GetConfig(char filePath[])
     else
     {
         /* Default values if config file dosn't exist */
+        printf("Config file dosn't exist. Program will use default values\n");
         configStruct.amountOfWords = 0;
         configStruct.mentionsScore = 1;
         configStruct.scoreThreshold = 0;
@@ -269,10 +270,10 @@ int CompareWithLastMessages(struct Line line, struct Line savedMessages[])
     {
         if(strcmp(line.message, savedMessages[i].message) == 0)
         {
-            return 0;
+            return 1;
         }
     }
-    return 1;
+    return 0;
 }
 
 /*Checks for ascii chars*/
