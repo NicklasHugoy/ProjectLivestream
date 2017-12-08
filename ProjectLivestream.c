@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#define MAX_UNIQUE_USERS 15
+#define MAX_UNIQUE_USERS 50
 #define NUMBER_OF_SAVED_MESSAGES 5
 
 struct Line
@@ -32,7 +32,7 @@ struct Config
     int amountOfWords;
     char **words;
     int mentionsScore;
-    int whitelistScore;
+    int *whitelistScore;
     int scoreThreshold;
     char username[20];
     int chatDelay;
@@ -51,7 +51,7 @@ int ContainsWhiteListedWords(struct Line line, struct Config config);
 int OnlyNumber(char *input);
 int ContainsWord(struct Line line, char *word);
 int MentionsStreamer(struct Line line, char *username);
-int CalculatePoints(struct Line line, struct Config configFile, struct Line savedMessages[]);
+int CalculatePoints(struct Line line, struct Config configFile);
 
 int main(void)
 {
@@ -87,7 +87,7 @@ struct Config GetConfig(char filePath[])
         char line[1024], *information;
         int i = 0, amountOfWords;
         int bytesNow;
-        int bytesConsumed = 0;
+        int bytesConsumed;
 
         /* reads one line at a time */
         while(fgets(line, sizeof(line), configFile) != NULL)
@@ -103,6 +103,7 @@ struct Config GetConfig(char filePath[])
                   configStruct.amountOfWords = amountOfWords;
                   break;
                 case 1: /* Whitelisted words */
+                  bytesConsumed = 0;
                   configStruct.words = malloc(amountOfWords * sizeof(char*));
                   for(int j = 0; j < amountOfWords; j++)
                   {
@@ -113,10 +114,16 @@ struct Config GetConfig(char filePath[])
                   }
                   break;
                 case 2:
-                  sscanf(information, " %d", &configStruct.mentionsScore);
+                  sscanf(information+bytesConsumed, " %d", &configStruct.mentionsScore);
                   break;
                 case 3:
-                  sscanf(information, " %d", &configStruct.whitelistScore);
+                  bytesConsumed = 0;
+                  configStruct.whitelistScore = malloc(amountOfWords*sizeof(int));
+                  for(int j = 0; j < amountOfWords; j++)
+                  {
+                     sscanf(information+bytesConsumed, " %d%n", &configStruct.whitelistScore[j], &bytesNow);
+                     bytesConsumed += bytesNow;
+                  }
                   break;
                 case 4:
                   sscanf(information, " %d", &configStruct.scoreThreshold);
@@ -205,10 +212,13 @@ int ConvertTimestamp(char timestamp[])
 
 void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[], struct Config configFile, struct Users user[])
 {
-    if(CalculatePoints(line, configFile, savedMessages) >= configFile.scoreThreshold)
+    if(CalculatePoints(line, configFile) >= configFile.scoreThreshold)
     {
         if(SingleChatterDelay(user, configFile.chatDelay, line) > configFile.chatDelay)
         {
+            if(CompareWithLastMessages(line, savedMessages))
+                return;
+
             SaveMessage(line, savedMessages);
             fprintf(outputFile,"[%s] %s: %s\n", line.timeStamp, line.username, line.message);
         }
@@ -314,13 +324,14 @@ int ContainsProblematicCharacter(FILE *inputFile)
     specified in the config file */
 int ContainsWhiteListedWords(struct Line line, struct Config config)
 {
+    int score = 0;
     for(int i = 0; i < config.amountOfWords; i++)
     {
         /* If message contains the word return 1 */
         if(ContainsWord(line, config.words[i]))
-            return 1;
+            score += config.whitelistScore[i];
     }
-    return 0;
+    return score;
 }
 
 /* Return 1 if the @username is in the message */
@@ -343,17 +354,18 @@ int ContainsWord(struct Line line, char *word)
     return 0;
 }
 
-int CalculatePoints(struct Line line, struct Config configFile, struct Line savedMessages[])
+int CalculatePoints(struct Line line, struct Config configFile)
 {
     int points = 0;
-    if(CompareWithLastMessages(line, savedMessages))
-        points -= 2;
 
-    if(ContainsWhiteListedWords(line, configFile))
-        points += configFile.whitelistScore;
+    points += ContainsWhiteListedWords(line, configFile);
 
     if(MentionsStreamer(line, configFile.username))
         points += configFile.mentionsScore;
+    if(points >= 999)
+    {
+        printf("%s\n", line.message);
+    }
 
     return points;
 }
