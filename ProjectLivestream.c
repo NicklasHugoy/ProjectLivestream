@@ -45,7 +45,7 @@ int SingleChatterDelay(struct Users user[], int chatDelay, struct Line newMessag
 void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[], int chatDelay, struct Users user[]);
 void SaveMessage(struct Line line, struct Line savedMessages[]);
 int CompareWithLastMessages(struct Line line, struct Line savedMessages[]);
-int CheckMessage(FILE *inputFile);
+int ContainsProblematicCharacter(FILE *inputFile);
 struct Config GetConfig(char filePath[]);
 int ContainsWhiteListedWords(struct Line line, struct Config config);
 int OnlyNumber(char *input);
@@ -69,13 +69,12 @@ int main(void)
         ReadChatLog(&line, inputFile, &hasReachedEndOfFile);
         if(hasReachedEndOfFile != 1)
         {
-            if(CompareWithLastMessages(line, savedMessages)==0)
+            if(CompareWithLastMessages(line, savedMessages))
                 line.score -= 2;
             if(CalculatePoints(line, configFile) >= configFile.scoreThreshold)
                 OutputToFile(line, outputFile, savedMessages, configFile.chatDelay, user);
         }
     }
-    printf("%d\n", sizeof(char*));
     fclose(outputFile);
     return 0;
 }
@@ -144,6 +143,7 @@ struct Config GetConfig(char filePath[])
     else
     {
         /* Default values if config file dosn't exist */
+        printf("Config file dosn't exist. Program will use default values\n");
         configStruct.amountOfWords = 0;
         configStruct.mentionsScore = 1;
         configStruct.scoreThreshold = 0;
@@ -179,7 +179,7 @@ void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
     }
 
     /* Check to make sure message dosn't contain problemmatic characters */
-    if(CheckMessage(inputFile))
+    if(ContainsProblematicCharacter(inputFile))
     {
         fscanf(inputFile, "%[^\n]", line->message);
     }
@@ -270,14 +270,14 @@ int CompareWithLastMessages(struct Line line, struct Line savedMessages[])
     {
         if(strcmp(line.message, savedMessages[i].message) == 0)
         {
-            return 0;
+            return 1;
         }
     }
-    return 1;
+    return 0;
 }
 
 /*Checks for ascii chars*/
-int CheckMessage(FILE *inputFile)
+int ContainsProblematicCharacter(FILE *inputFile)
 {
     int messageStart = ftell(inputFile);
     int messageEnd;
@@ -289,10 +289,11 @@ int CheckMessage(FILE *inputFile)
     {
         currentChar = fgetc(inputFile);
 
+
         if(strchr(normalText, currentChar) == NULL)
-            {
-                falseChars++;
-            }
+        {
+            falseChars++;
+        }
         if(currentChar == EOF)
             break;
     }
