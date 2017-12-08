@@ -45,7 +45,7 @@ int SingleChatterDelay(struct Users user[], int chatDelay, struct Line newMessag
 void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[], int chatDelay, struct Users user[]);
 void SaveMessage(struct Line line, struct Line savedMessages[]);
 int CompareWithLastMessages(struct Line line, struct Line savedMessages[]);
-int CheckMessage(FILE *inputFile);
+int ContainsProblematicCharacter(FILE *inputFile);
 struct Config GetConfig(char filePath[]);
 int ContainsWhiteListedWords(struct Line line, struct Config config);
 int OnlyNumber(char *input);
@@ -59,7 +59,7 @@ int main(void)
     FILE *inputFile = fopen("TextFiles/ForsenLoL_ChatLog_29-10.txt", "r");
     struct Line line;
     struct Line savedMessages[NUMBER_OF_SAVED_MESSAGES];
-    int hasReachedEndOfFile;
+    int hasReachedEndOfFile = 0;
     struct Users user[MAX_UNIQUE_USERS];
 
     struct Config configFile = GetConfig("TextFiles/config.txt");
@@ -69,7 +69,7 @@ int main(void)
         ReadChatLog(&line, inputFile, &hasReachedEndOfFile);
         if(hasReachedEndOfFile != 1)
         {
-            if(CompareWithLastMessages(line, savedMessages)==0)
+            if(CompareWithLastMessages(line, savedMessages))
                 line.score -= 2;
             if(CalculatePoints(line, configFile) >= configFile.scoreThreshold)
                 OutputToFile(line, outputFile, savedMessages, configFile.chatDelay, user);
@@ -88,7 +88,7 @@ struct Config GetConfig(char filePath[])
     if(configFile != NULL)
     {
         char line[1024], *information;
-        int i=0, amountOfWords;
+        int i = 0, amountOfWords;
         int bytesNow;
         int bytesConsumed=0;
 
@@ -136,6 +136,7 @@ struct Config GetConfig(char filePath[])
     else
     {
         /* Default values if config file dosn't exist */
+        printf("Config file dosn't exist. Program will use default values\n");
         configStruct.amountOfWords = 0;
         configStruct.mentionsScore = 1;
         configStruct.scoreThreshold = 0;
@@ -147,12 +148,15 @@ struct Config GetConfig(char filePath[])
     return configStruct;
 }
 
+/*  Read 1 line in the chatlog and
+    returns 1 if there aren't more lines to read */
 void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
 {
     if(inputFile != NULL)
     {
+        /* Check if fscanf successfully has assigned values to 2 variables */
         if(fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: ",
-            line->timeStamp, line->username)==2)
+            line->timeStamp, line->username) == 2)
         {
             *hasReachedEndOfFile = 0;
         }
@@ -166,17 +170,19 @@ void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
         printf("Problem with file, exiting program...\n");
         exit(EXIT_FAILURE);
     }
-    if(CheckMessage(inputFile))
+
+    /* Check to make sure message dosn't contain problemmatic characters */
+    if(ContainsProblematicCharacter(inputFile))
     {
         fscanf(inputFile, "%[^\n]", line->message);
     }
     else
-    {
+    {   /* Replace message with error */
         strcpy(line->message,"ERROR - Problematic characters - ERROR");
     }
 }
 
-/*convert timestamp to int of seconds*/
+/* convert timestamp to int of seconds */
 int ConvertTimestamp(char timestamp[])
 {
 	const int MIN = 60;
@@ -186,8 +192,8 @@ int ConvertTimestamp(char timestamp[])
 
 	sscanf(timestamp,"%s %d:%d:%d", tempTime, &hours, &minutes, &seconds);
 
-	tempresult= hours*MIN + minutes;
-	results= tempresult*SEC + seconds;
+	tempresult = hours * MIN + minutes;
+	results = tempresult * SEC + seconds;
 	return results;
 }
 
@@ -201,87 +207,92 @@ void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[
 }
 
 /*Checker om den nye bruger har skrevet før og om han må skrive igen.*/
-int SingleChatterDelay(struct Users user[], int chatDelay, struct Line newMessage){
+int SingleChatterDelay(struct Users user[], int chatDelay, struct Line newMessage)
+{
 	int i;
 	int userindex = MAX_UNIQUE_USERS-1;
-	int result=chatDelay+1;
+	int result = chatDelay+1;
 	struct Users newUser;
 
 	strcpy(newUser.username, newMessage.username);
 	strcpy(newUser.timeStamp, newMessage.timeStamp);
 
-	for(i=0; i<MAX_UNIQUE_USERS; i++)
+	for(i = 0; i < MAX_UNIQUE_USERS; i++)
 	{
-		if(strcmp(newUser.username, user[i].username)==0)
+		if(strcmp(newUser.username, user[i].username) == 0)
 		{
 			result = ConvertTimestamp(newUser.timeStamp) - ConvertTimestamp(user[i].timeStamp);
-			userindex=i;
+			userindex = i;
 			break;
 		}
 	}
     if(result > chatDelay)
     {
-        for(i=userindex; i>=0; i--)
+        for(i = userindex; i >= 0; i--)
     	{
     		if(i==0)
     		{
-    			user[i]=newUser;
+    			user[i] = newUser;
     		}
             else
             {
-                user[i]=user[i-1];
+                user[i] = user[i-1];
             }
     	}
     }
 	return result;
 }
 
+/* Save the message to the start of and array and shift the array*/
 void SaveMessage(struct Line line, struct Line savedMessages[])
 {
     /* Shift elements in array */
     for(int k = NUMBER_OF_SAVED_MESSAGES-1; k > 0; k--)
     {
-        savedMessages[k]=savedMessages[k-1];
+        savedMessages[k] = savedMessages[k-1];
     }
     /* Save new message */
-    savedMessages[0]=line;
+    savedMessages[0] = line;
 }
 
+/*  Compare the message with an array of older messages
+    and checks if it's the same message */
 int CompareWithLastMessages(struct Line line, struct Line savedMessages[])
 {
-    for(int i=0; i<NUMBER_OF_SAVED_MESSAGES; i++)
+    for(int i = 0; i < NUMBER_OF_SAVED_MESSAGES; i++)
     {
         if(strcmp(line.message, savedMessages[i].message) == 0)
         {
-            return 0;
+            return 1;
         }
     }
-    return 1;
+    return 0;
 }
 
 /*Checks for ascii chars*/
-int CheckMessage(FILE *inputFile)
+int ContainsProblematicCharacter(FILE *inputFile)
 {
     int messageStart = ftell(inputFile);
     int messageEnd;
     int messageLenght;
     int currentChar;
-    char normalText[]="abcdefghijklmnopqrstuvwxyz,!:;=+- ?.ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    char normalText[] = "abcdefghijklmnopqrstuvwxyz,!:;=+- ?.ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
     int falseChars=0;
     while(currentChar != '\n')
     {
         currentChar = fgetc(inputFile);
 
-        if(strchr(normalText, currentChar)==NULL)
-            {
-                falseChars++;
-            }
-        if(currentChar==EOF)
+
+        if(strchr(normalText, currentChar) == NULL)
+        {
+            falseChars++;
+        }
+        if(currentChar == EOF)
             break;
     }
     messageEnd = ftell(inputFile);
     messageLenght = messageEnd - messageStart;
-    if((messageLenght/falseChars)<=2)
+    if((messageLenght / falseChars) <= 2)
     {
         return 0;
     }
@@ -290,9 +301,11 @@ int CheckMessage(FILE *inputFile)
 
 }
 
+/*  Reuturns 1 if the message contains one of the whitelisted words,
+    specified in the config file */
 int ContainsWhiteListedWords(struct Line line, struct Config config)
 {
-    for(int i=0; i<config.amountOfWords; i++)
+    for(int i = 0; i < config.amountOfWords; i++)
     {
         /* If message contains the word return 1 */
         if(ContainsWord(line, config.words[i]))
@@ -301,10 +314,13 @@ int ContainsWhiteListedWords(struct Line line, struct Config config)
     return 0;
 }
 
+/* Return 1 if the @username is in the message */
 int MentionsStreamer(struct Line line, char *username)
 {
+    /* New arrary with size 1 byte larger than username */
     char mention[strlen(username)+1];
 
+    /* Adds a @ character in front of the username */
     mention[0] = '@';
     strcpy(mention+1, username);
 
@@ -320,10 +336,10 @@ int ContainsWord(struct Line line, char *word)
 
 int CalculatePoints(struct Line line, struct Config configFile)
 {
-    int points=0;
+    int points = 0;
     if(ContainsWhiteListedWords(line, configFile))
-        points+=configFile.whitelistScore;
+        points += configFile.whitelistScore;
     if(MentionsStreamer(line, configFile.username))
-        points+=configFile.mentionsScore;
+        points += configFile.mentionsScore;
     return points;
 }
