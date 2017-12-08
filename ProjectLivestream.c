@@ -42,7 +42,7 @@ void UserInputDialog(int *scoreThreshold, char streamerUsername[]);
 int ConvertTimestamp(char timestamp[]);
 void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile);
 int SingleChatterDelay(struct Users user[], int chatDelay, struct Line newMessage);
-void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[], int chatDelay, struct Users user[]);
+void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[], struct Config configFile, struct Users user[]);
 void SaveMessage(struct Line line, struct Line savedMessages[]);
 int CompareWithLastMessages(struct Line line, struct Line savedMessages[]);
 int ContainsProblematicCharacter(FILE *inputFile);
@@ -51,7 +51,7 @@ int ContainsWhiteListedWords(struct Line line, struct Config config);
 int OnlyNumber(char *input);
 int ContainsWord(struct Line line, char *word);
 int MentionsStreamer(struct Line line, char *username);
-int CalculatePoints(struct Line line, struct Config configFile);
+int CalculatePoints(struct Line line, struct Config configFile, struct Line savedMessages[]);
 
 int main(void)
 {
@@ -69,10 +69,7 @@ int main(void)
         ReadChatLog(&line, inputFile, &hasReachedEndOfFile);
         if(hasReachedEndOfFile != 1)
         {
-            if(CompareWithLastMessages(line, savedMessages))
-                line.score -= 2;
-            if(CalculatePoints(line, configFile) >= configFile.scoreThreshold)
-                OutputToFile(line, outputFile, savedMessages, configFile.chatDelay, user);
+            OutputToFile(line, outputFile, savedMessages, configFile, user);
         }
     }
     fclose(outputFile);
@@ -90,7 +87,7 @@ struct Config GetConfig(char filePath[])
         char line[1024], *information;
         int i = 0, amountOfWords;
         int bytesNow;
-        int bytesConsumed = 0;
+        int bytesConsumed=0;
 
         /* reads one line at a time */
         while(fgets(line, sizeof(line), configFile) != NULL)
@@ -107,7 +104,7 @@ struct Config GetConfig(char filePath[])
                   break;
                 case 1: /* Whitelisted words */
                   configStruct.words = malloc(amountOfWords * sizeof(char*));
-                  for(int j = 0; j < amountOfWords; j++)
+                  for(int j=0; j<amountOfWords; j++)
                   {
                       configStruct.words[j] = malloc(10);
                       /* Returns amount of bytes consumed to be able to continue from where it stopped */
@@ -206,12 +203,15 @@ int ConvertTimestamp(char timestamp[])
 	return results;
 }
 
-void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[], int chatDelay, struct Users user[])
+void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[], struct Config configFile, struct Users user[])
 {
-    if(SingleChatterDelay(user, chatDelay, line)>chatDelay)
+    if(CalculatePoints(line, configFile, savedMessages) >= configFile.scoreThreshold)
     {
-        SaveMessage(line, savedMessages);
-        fprintf(outputFile,"[%s] %s: %s\n", line.timeStamp, line.username, line.message);
+        if(SingleChatterDelay(user, configFile.chatDelay, line) > configFile.chatDelay)
+        {
+            SaveMessage(line, savedMessages);
+            fprintf(outputFile,"[%s] %s: %s\n", line.timeStamp, line.username, line.message);
+        }
     }
 }
 
@@ -343,12 +343,17 @@ int ContainsWord(struct Line line, char *word)
     return 0;
 }
 
-int CalculatePoints(struct Line line, struct Config configFile)
+int CalculatePoints(struct Line line, struct Config configFile, struct Line savedMessages[])
 {
     int points = 0;
+    if(CompareWithLastMessages(line, savedMessages))
+        points -= 2;
+
     if(ContainsWhiteListedWords(line, configFile))
         points += configFile.whitelistScore;
+
     if(MentionsStreamer(line, configFile.username))
         points += configFile.mentionsScore;
+
     return points;
 }
