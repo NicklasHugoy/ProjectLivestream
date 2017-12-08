@@ -59,7 +59,7 @@ int main(void)
     FILE *inputFile = fopen("TextFiles/ForsenLoL_ChatLog_29-10.txt", "r");
     struct Line line;
     struct Line savedMessages[NUMBER_OF_SAVED_MESSAGES];
-    int hasReachedEndOfFile=0;
+    int hasReachedEndOfFile = 0;
     struct Users user[MAX_UNIQUE_USERS];
 
     struct Config configFile = GetConfig("TextFiles/config.txt");
@@ -89,7 +89,7 @@ struct Config GetConfig(char filePath[])
     if(configFile != NULL)
     {
         char line[1024], *information;
-        int i=0, amountOfWords;
+        int i = 0, amountOfWords;
 
         /* reads one line at a time */
         while(fgets(line, sizeof(line), configFile) != NULL)
@@ -106,10 +106,10 @@ struct Config GetConfig(char filePath[])
             else if(i==1) /* Whitelisted words */
             {
                 int bytesNow;
-                int bytesConsumed=0;
+                int bytesConsumed = 0;
 
                 configStruct.words = malloc((amountOfWords * sizeof(char*)));
-                for(int j=0; j<amountOfWords; j++)
+                for(int j = 0; j < amountOfWords; j++)
                 {
                     configStruct.words[j] = malloc(10);
                     /*  %n Returns amount of bytes consumed to be able to
@@ -163,7 +163,7 @@ void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
     {
         /* Check if fscanf successfully has assigned values to 2 variables */
         if(fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: ",
-            line->timeStamp, line->username)==2)
+            line->timeStamp, line->username) == 2)
         {
             *hasReachedEndOfFile = 0;
         }
@@ -199,8 +199,8 @@ int ConvertTimestamp(char timestamp[])
 
 	sscanf(timestamp,"%s %d:%d:%d", tempTime, &hours, &minutes, &seconds);
 
-	tempresult= hours*MIN + minutes;
-	results= tempresult*SEC + seconds;
+	tempresult = hours * MIN + minutes;
+	results = tempresult * SEC + seconds;
 	return results;
 }
 
@@ -218,32 +218,32 @@ int SingleChatterDelay(struct Users user[], int chatDelay, struct Line newMessag
 {
 	int i;
 	int userindex = MAX_UNIQUE_USERS-1;
-	int result=chatDelay+1;
+	int result = chatDelay+1;
 	struct Users newUser;
 
 	strcpy(newUser.username, newMessage.username);
 	strcpy(newUser.timeStamp, newMessage.timeStamp);
 
-	for(i=0; i<MAX_UNIQUE_USERS; i++)
+	for(i = 0; i < MAX_UNIQUE_USERS; i++)
 	{
-		if(strcmp(newUser.username, user[i].username)==0)
+		if(strcmp(newUser.username, user[i].username) == 0)
 		{
 			result = ConvertTimestamp(newUser.timeStamp) - ConvertTimestamp(user[i].timeStamp);
-			userindex=i;
+			userindex = i;
 			break;
 		}
 	}
     if(result > chatDelay)
     {
-        for(i=userindex; i>=0; i--)
+        for(i = userindex; i >= 0; i--)
     	{
     		if(i==0)
     		{
-    			user[i]=newUser;
+    			user[i] = newUser;
     		}
             else
             {
-                user[i]=user[i-1];
+                user[i] = user[i-1];
             }
     	}
     }
@@ -256,17 +256,17 @@ void SaveMessage(struct Line line, struct Line savedMessages[])
     /* Shift elements in array */
     for(int k = NUMBER_OF_SAVED_MESSAGES-1; k > 0; k--)
     {
-        savedMessages[k]=savedMessages[k-1];
+        savedMessages[k] = savedMessages[k-1];
     }
     /* Save new message */
-    savedMessages[0]=line;
+    savedMessages[0] = line;
 }
 
 /*  Compare the message with an array of older messages
     and checks if it's the same message */
 int CompareWithLastMessages(struct Line line, struct Line savedMessages[])
 {
-    for(int i=0; i<NUMBER_OF_SAVED_MESSAGES; i++)
+    for(int i = 0; i < NUMBER_OF_SAVED_MESSAGES; i++)
     {
         if(strcmp(line.message, savedMessages[i].message) == 0)
         {
@@ -283,22 +283,22 @@ int CheckMessage(FILE *inputFile)
     int messageEnd;
     int messageLenght;
     int currentChar;
-    char normalText[]="abcdefghijklmnopqrstuvwxyz,!:;=+- ?.ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    char normalText[] = "abcdefghijklmnopqrstuvwxyz,!:;=+- ?.ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
     int falseChars=0;
     while(currentChar != '\n')
     {
         currentChar = fgetc(inputFile);
 
-        if(strchr(normalText, currentChar)==NULL)
+        if(strchr(normalText, currentChar) == NULL)
             {
                 falseChars++;
             }
-        if(currentChar==EOF)
+        if(currentChar == EOF)
             break;
     }
     messageEnd = ftell(inputFile);
     messageLenght = messageEnd - messageStart;
-    if((messageLenght/falseChars)<=2)
+    if((messageLenght / falseChars) <= 2)
     {
         return 0;
     }
@@ -311,7 +311,7 @@ int CheckMessage(FILE *inputFile)
     specified in the config file */
 int ContainsWhiteListedWords(struct Line line, struct Config config)
 {
-    for(int i=0; i<config.amountOfWords; i++)
+    for(int i = 0; i < config.amountOfWords; i++)
     {
         /* If message contains the word return 1 */
         if(ContainsWord(line, config.words[i]))
@@ -342,10 +342,10 @@ int ContainsWord(struct Line line, char *word)
 
 int CalculatePoints(struct Line line, struct Config configFile)
 {
-    int points=0;
+    int points = 0;
     if(ContainsWhiteListedWords(line, configFile))
-        points+=configFile.whitelistScore;
+        points += configFile.whitelistScore;
     if(MentionsStreamer(line, configFile.username))
-        points+=configFile.mentionsScore;
+        points += configFile.mentionsScore;
     return points;
 }
