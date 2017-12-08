@@ -87,7 +87,7 @@ struct Config GetConfig(char filePath[])
         char line[1024], *information;
         int i = 0, amountOfWords;
         int bytesNow;
-        int bytesConsumed=0;
+        int bytesConsumed = 0;
 
         /* reads one line at a time */
         while(fgets(line, sizeof(line), configFile) != NULL)
@@ -104,7 +104,7 @@ struct Config GetConfig(char filePath[])
                   break;
                 case 1: /* Whitelisted words */
                   configStruct.words = malloc(amountOfWords * sizeof(char*));
-                  for(int j=0; j<amountOfWords; j++)
+                  for(int j = 0; j < amountOfWords; j++)
                   {
                       configStruct.words[j] = malloc(10);
                       /* Returns amount of bytes consumed to be able to continue from where it stopped */
@@ -239,7 +239,7 @@ int SingleChatterDelay(struct Users user[], int chatDelay, struct Line newMessag
     {
         for(i = userindex; i >= 0; i--)
     	{
-    		if(i==0)
+    		if(i == 0)
     		{
     			user[i] = newUser;
     		}
@@ -286,7 +286,7 @@ int ContainsProblematicCharacter(FILE *inputFile)
     int messageLenght;
     int currentChar;
     char normalText[] = "abcdefghijklmnopqrstuvwxyz,!:;=+- ?.ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-    int falseChars=0;
+    int falseChars = 0;
     while(currentChar != '\n')
     {
         currentChar = fgetc(inputFile);
