@@ -59,7 +59,7 @@ int main(void)
     FILE *inputFile = fopen("TextFiles/ForsenLoL_ChatLog_29-10.txt", "r");
     struct Line line;
     struct Line savedMessages[NUMBER_OF_SAVED_MESSAGES];
-    int hasReachedEndOfFile;
+    int hasReachedEndOfFile=0;
     struct Users user[MAX_UNIQUE_USERS];
 
     struct Config configFile = GetConfig("TextFiles/config.txt");
@@ -75,6 +75,7 @@ int main(void)
                 OutputToFile(line, outputFile, savedMessages, configFile.chatDelay, user);
         }
     }
+    printf("%d\n", sizeof(char*));
     fclose(outputFile);
     return 0;
 }
@@ -107,11 +108,12 @@ struct Config GetConfig(char filePath[])
                 int bytesNow;
                 int bytesConsumed=0;
 
-                configStruct.words = malloc(amountOfWords * sizeof(char*));
+                configStruct.words = malloc((amountOfWords * sizeof(char*)));
                 for(int j=0; j<amountOfWords; j++)
                 {
                     configStruct.words[j] = malloc(10);
-                    /* Returns amount of bytes consumed to be able to continue from were it stoped */
+                    /*  %n Returns amount of bytes consumed to be able to
+                        continue from were it stoped, next time the loop runs*/
                     sscanf(information+bytesConsumed, " %s%n", configStruct.words[j], &bytesNow);
                     bytesConsumed += bytesNow;
                 }
@@ -153,10 +155,13 @@ struct Config GetConfig(char filePath[])
     return configStruct;
 }
 
+/*  Read 1 line in the chatlog and
+    returns 1 if there aren't more lines to read */
 void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
 {
     if(inputFile != NULL)
     {
+        /* Check if fscanf successfully has assigned values to 2 variables */
         if(fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: ",
             line->timeStamp, line->username)==2)
         {
@@ -172,17 +177,19 @@ void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
         printf("Problem with file, exiting program...\n");
         exit(EXIT_FAILURE);
     }
+
+    /* Check to make sure message dosn't contain problemmatic characters */
     if(CheckMessage(inputFile))
     {
         fscanf(inputFile, "%[^\n]", line->message);
     }
     else
-    {
+    {   /* Replace message with error */
         strcpy(line->message,"ERROR - Problematic characters - ERROR");
     }
 }
 
-/*convert timestamp to int of seconds*/
+/* convert timestamp to int of seconds */
 int ConvertTimestamp(char timestamp[])
 {
 	const int MIN = 60;
@@ -207,7 +214,8 @@ void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[
 }
 
 /*Checker om den nye bruger har skrevet før og om han må skrive igen.*/
-int SingleChatterDelay(struct Users user[], int chatDelay, struct Line newMessage){
+int SingleChatterDelay(struct Users user[], int chatDelay, struct Line newMessage)
+{
 	int i;
 	int userindex = MAX_UNIQUE_USERS-1;
 	int result=chatDelay+1;
@@ -242,6 +250,7 @@ int SingleChatterDelay(struct Users user[], int chatDelay, struct Line newMessag
 	return result;
 }
 
+/* Save the message to the start of and array and shift the array*/
 void SaveMessage(struct Line line, struct Line savedMessages[])
 {
     /* Shift elements in array */
@@ -253,6 +262,8 @@ void SaveMessage(struct Line line, struct Line savedMessages[])
     savedMessages[0]=line;
 }
 
+/*  Compare the message with an array of older messages
+    and checks if it's the same message */
 int CompareWithLastMessages(struct Line line, struct Line savedMessages[])
 {
     for(int i=0; i<NUMBER_OF_SAVED_MESSAGES; i++)
@@ -296,6 +307,8 @@ int CheckMessage(FILE *inputFile)
 
 }
 
+/*  Reuturns 1 if the message contains one of the whitelisted words,
+    specified in the config file */
 int ContainsWhiteListedWords(struct Line line, struct Config config)
 {
     for(int i=0; i<config.amountOfWords; i++)
@@ -307,10 +320,13 @@ int ContainsWhiteListedWords(struct Line line, struct Config config)
     return 0;
 }
 
+/* Return 1 if the @username is in the message */
 int MentionsStreamer(struct Line line, char *username)
 {
+    /* New arrary with size 1 byte larger than username */
     char mention[strlen(username)+1];
 
+    /* Adds a @ character in front of the username */
     mention[0] = '@';
     strcpy(mention+1, username);
 
