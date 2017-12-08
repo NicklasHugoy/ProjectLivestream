@@ -45,7 +45,7 @@ int SingleChatterDelay(struct Users user[], int chatDelay, struct Line newMessag
 void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[], int chatDelay, struct Users user[]);
 void SaveMessage(struct Line line, struct Line savedMessages[]);
 int CompareWithLastMessages(struct Line line, struct Line savedMessages[]);
-int CheckMessage(FILE *inputFile);
+int ContainsProblematicCharacter(FILE *inputFile);
 struct Config GetConfig(char filePath[]);
 int ContainsWhiteListedWords(struct Line line, struct Config config);
 int OnlyNumber(char *input);
@@ -75,7 +75,6 @@ int main(void)
                 OutputToFile(line, outputFile, savedMessages, configFile.chatDelay, user);
         }
     }
-    printf("%d\n", sizeof(char*));
     fclose(outputFile);
     return 0;
 }
@@ -179,7 +178,7 @@ void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
     }
 
     /* Check to make sure message dosn't contain problemmatic characters */
-    if(CheckMessage(inputFile))
+    if(ContainsProblematicCharacter(inputFile))
     {
         fscanf(inputFile, "%[^\n]", line->message);
     }
@@ -277,7 +276,7 @@ int CompareWithLastMessages(struct Line line, struct Line savedMessages[])
 }
 
 /*Checks for ascii chars*/
-int CheckMessage(FILE *inputFile)
+int ContainsProblematicCharacter(FILE *inputFile)
 {
     int messageStart = ftell(inputFile);
     int messageEnd;
@@ -290,9 +289,9 @@ int CheckMessage(FILE *inputFile)
         currentChar = fgetc(inputFile);
 
         if(strchr(normalText, currentChar)==NULL)
-            {
-                falseChars++;
-            }
+        {
+            falseChars++;
+        }
         if(currentChar==EOF)
             break;
     }
