@@ -139,6 +139,16 @@ struct Config GetConfig(char filePath[])
             i++;
         }
     }
+    else
+    {
+        /* Default values if config file dosn't exist */
+        configStruct.amountOfWords = 0;
+        configStruct.mentionsScore = 1;
+        configStruct.scoreThreshold = 0;
+        configStruct.username[0] = '\0';
+        configStruct.chatDelay = 10;
+
+    }
     fclose(configFile);
     return configStruct;
 }
