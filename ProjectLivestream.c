@@ -41,7 +41,7 @@ struct Config
 struct OneWord
 {
     int wordlength;
-    char storedWord[];
+    char* storedWord;
 };
 
 void UserInputDialog(int *scoreThreshold, char streamerUsername[]);
@@ -411,7 +411,11 @@ int MessageSpamDetection(struct Line message, int filter)
     }
     /*her alloceres plads til den bedsked som blev læst igennem tidligere*/
     sizeOfSingleWords = sizeof(struct OneWord) + ((10+longestWord)*sizeof(char));
-    SingleWords = malloc(totalWords * sizeOfSingleWords);
+    SingleWords = malloc(totalWords*sizeof(struct OneWord));
+    for(i=0; i<totalWords; i++)
+    {
+        SingleWords[i].storedWord = malloc((longestWord+10)*sizeof(char));
+    }
     if(SingleWords == NULL)
     {
         printf("Error allocating with Malloc for SingeWords\n");
@@ -435,28 +439,33 @@ int MessageSpamDetection(struct Line message, int filter)
                         strncpy(SingleWords[j].storedWord, message.message+messageOffset, singleWordlength);
                         memset(SingleWords[j].storedWord+singleWordlength,'\0',1);
                     }
-                messageOffset = i;
+                messageOffset = i+1;
                 singleWordlength=0;
             }
             else
             {
-                SingleWords[j].wordlength = singleWordlength;
-                strncpy(SingleWords[j].storedWord, message.message+messageOffset, singleWordlength);
-                memset(SingleWords[j].storedWord+singleWordlength,'\0',1);
+                SingleWords[j].wordlength = singleWordlength-1;
+                strncpy(SingleWords[j].storedWord, message.message+messageOffset, singleWordlength-1);
+                memset(SingleWords[j].storedWord+singleWordlength-1,'\0',1);
                 messageOffset = i+1;
                 j++;
                 singleWordlength=0;
             }
 
         }
+    }/*
+    for (i = 0; i < totalWords; ++i)
+    {
+        printf("%s ",SingleWords[i].storedWord );
     }
+    printf("\n");*/
     /*bruger en anden function til at finde dupliceret ord*/
-    messageIssue = WordCompare(SingleWords, totalWords, sizeOfSingleWords);
+    /*messageIssue = WordCompare(SingleWords, totalWords, sizeOfSingleWords);*/
     /*her finder den ud af om beskedens indhold kan sees som spam
     ud fra den filter brugeren har givet progammet*/
     if (messageIssue!=-1)
     {
-        if(messageIssue>filter)
+        if(messageIssue<filter)
             return 1;
         else
             return 0;
