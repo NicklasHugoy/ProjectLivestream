@@ -51,7 +51,7 @@ int SingleChatterDelay(struct Users user[], int chatDelay, struct Line newMessag
 void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[], struct Config configFile, struct Users user[]);
 void SaveMessage(struct Line line, struct Line savedMessages[]);
 int CompareWithLastMessages(struct Line line, struct Line savedMessages[]);
-int ContainsProblematicCharacter(FILE *inputFile);
+int ContainsProblematicCharacter(char *stringToCheck);
 struct Config GetConfig(char filePath[]);
 int ContainsWhiteListedWords(struct Line line, struct Config config);
 int OnlyNumber(char *input);
@@ -86,7 +86,7 @@ int main(void)
                 continue;
             }
             OutputToFile(line, outputFile, savedMessages, configFile, user);
-            
+
         }
     }
     printf("%d message was seen as spam\n", spamDetected );
@@ -191,13 +191,22 @@ struct Config GetConfig(char filePath[])
     returns 1 if there aren't more lines to read */
 void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
 {
+    char message[2001];
     if(inputFile != NULL)
     {
         /* Check if fscanf successfully has assigned values to 2 variables */
-        if(fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: ",
-            line->timeStamp, line->username) == 2)
+        if(fscanf(inputFile, " [%[0-9 -:] UTC] %[0-9A-z_]: %[^\n]",
+            line->timeStamp, line->username, message) == 3)
         {
             *hasReachedEndOfFile = 0;
+            if(ContainsProblematicCharacter(message))
+            {
+                strcpy(line->message,"ERROR - Problematic characters - ERROR");
+            }
+            else
+            {
+                strcpy(line->message, message);
+            }
         }
         else
         {
@@ -208,16 +217,6 @@ void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
     {
         printf("Problem with file, exiting program...\n");
         exit(EXIT_FAILURE);
-    }
-
-    /* Check to make sure message dosn't contain problemmatic characters */
-    if(ContainsProblematicCharacter(inputFile))
-    {
-        fscanf(inputFile, "%[^\n]", line->message);
-    }
-    else
-    {   /* Replace message with error */
-        strcpy(line->message,"ERROR - Problematic characters - ERROR");
     }
 }
 
@@ -315,35 +314,23 @@ int CompareWithLastMessages(struct Line line, struct Line savedMessages[])
 }
 
 /*Checks for ascii chars*/
-int ContainsProblematicCharacter(FILE *inputFile)
+int ContainsProblematicCharacter(char *stringToCheck)
 {
-    int messageStart = ftell(inputFile);
-    int messageEnd;
-    int messageLenght;
-    int currentChar;
+    int messageLenght = strlen(stringToCheck);
     char normalText[] = "abcdefghijklmnopqrstuvwxyz,!:;=+- ?.ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-    int falseChars = 0;
-    while(currentChar != '\n')
+    int falseChars = 1;
+    for(int i=0; i<messageLenght; i++)
     {
-        currentChar = fgetc(inputFile);
-
-
-        if(strchr(normalText, currentChar) == NULL)
+        if(strchr(normalText, stringToCheck[i]) == NULL)
         {
             falseChars++;
         }
-        if(currentChar == EOF)
-            break;
     }
-    messageEnd = ftell(inputFile);
-    messageLenght = messageEnd - messageStart;
     if((messageLenght / falseChars) <= 2)
     {
-        return 0;
+        return 1;
     }
-    fseek(inputFile, messageStart, SEEK_SET);
-    return 1;
-
+    return 0;
 }
 
 /*  Reuturns 1 if the message contains one of the whitelisted words,
@@ -443,8 +430,8 @@ int MessageSpamDetection(struct Line message, int filter)
             {   /*når den finder et mellemrum vil den ligge længeden af ordet in i wordlength
                 og den vil ligge ordet inde i char arrayet.*/
                 if(i==messageTotalLength-1)
-                    {   
-                        SingleWords[j].wordlength = singleWordlength; 
+                    {
+                        SingleWords[j].wordlength = singleWordlength;
                         strncpy(SingleWords[j].storedWord, message.message+messageOffset, singleWordlength);
                         memset(SingleWords[j].storedWord+singleWordlength,'\0',1);
                     }
@@ -452,7 +439,7 @@ int MessageSpamDetection(struct Line message, int filter)
                 singleWordlength=0;
             }
             else
-            {   
+            {
                 SingleWords[j].wordlength = singleWordlength;
                 strncpy(SingleWords[j].storedWord, message.message+messageOffset, singleWordlength);
                 memset(SingleWords[j].storedWord+singleWordlength,'\0',1);
@@ -500,10 +487,10 @@ int WordCompare(struct OneWord words[], int totalWords, int sizeOfSingleWords)
                 uniqueWords++;
         }
         else
-        {   
+        {
             if (strcmp(words[i].storedWord, words[i-1].storedWord)!=0)
             {
-               uniqueWords++; 
+               uniqueWords++;
             }
         }
     }
