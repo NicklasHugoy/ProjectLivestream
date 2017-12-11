@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <assert.h>
 
 #define MAX_UNIQUE_USERS 50
 #define NUMBER_OF_SAVED_MESSAGES 5
@@ -37,6 +38,11 @@ struct Config
     char username[20];
     int chatDelay;
 };
+struct OneWord
+{
+    int wordlength;
+    char storedWord[];
+};
 
 void UserInputDialog(int *scoreThreshold, char streamerUsername[]);
 int ConvertTimestamp(char timestamp[]);
@@ -52,6 +58,9 @@ int OnlyNumber(char *input);
 int ContainsWord(struct Line line, char *word);
 int MentionsStreamer(struct Line line, char *username);
 int CalculatePoints(struct Line line, struct Config configFile);
+int MessageSpamDetection(struct Line message, int filter);
+int WordCompare(struct OneWord words[], int totalWords, int sizeOfSingleWords);
+int SortWords(const void *a, const void *b);
 
 int main(void)
 {
@@ -61,6 +70,7 @@ int main(void)
     struct Line savedMessages[NUMBER_OF_SAVED_MESSAGES];
     int hasReachedEndOfFile = 0;
     struct Users user[MAX_UNIQUE_USERS];
+    int spamDetected=0;
 
     struct Config configFile = GetConfig("TextFiles/config.txt");
 
@@ -70,9 +80,16 @@ int main(void)
         ReadChatLog(&line, inputFile, &hasReachedEndOfFile);
         if(hasReachedEndOfFile != 1)
         {
+            if(MessageSpamDetection(line, 2))
+            {
+                spamDetected++;
+                continue;
+            }
             OutputToFile(line, outputFile, savedMessages, configFile, user);
+            
         }
     }
+    printf("%d message was seen as spam\n", spamDetected );
     fclose(outputFile);
     return 0;
 }
@@ -373,4 +390,143 @@ int CalculatePoints(struct Line line, struct Config configFile)
         points += configFile.mentionsScore;
 
     return points;
+}
+/*modtager en besked og et filter.
+deler beskeden op i substrings som består at enkelte ord.
+finder ud af om beskeden sees som spam eller ej.
+giver en boolsk værdi tilbage (0 eller 1)*/
+int MessageSpamDetection(struct Line message, int filter)
+{
+    int i, j=0;
+    int messageTotalLength;
+    int messageOffset=0;
+    int totalWords=0;
+    int singleWordlength=0;
+    int longestWord=0;
+    int messageIssue=0;
+    int sizeOfSingleWords;
+    struct OneWord *SingleWords;
+
+    messageTotalLength=strlen(message.message);
+    /*her læses beskeden igennem og finder ud af hvor mange ord beskeden har*/
+    for(i=0; i<messageTotalLength; i++)
+    {
+        singleWordlength++;
+        if(message.message[i]==' ' || i==messageTotalLength-1)
+        {
+            totalWords++;
+            if(longestWord<singleWordlength)
+            {
+                longestWord=singleWordlength;
+            }
+            singleWordlength=0;
+        }
+    }
+    /*her alloceres plads til den bedsked som blev læst igennem tidligere*/
+    sizeOfSingleWords = sizeof(struct OneWord) + ((10+longestWord)*sizeof(char));
+    SingleWords = malloc(totalWords * sizeOfSingleWords);
+    if(SingleWords == NULL)
+    {
+        printf("Error allocating with Malloc for SingeWords\n");
+        assert(SingleWords == NULL);
+    }
+    /*her gøres det samme som før, men når den finder det ord
+    vil den ligge det over i allayet som blev lavet lige før*/
+    for(i=0; i<messageTotalLength; i++)
+    {
+        singleWordlength++;
+        if(message.message[i]==' ' || i==messageTotalLength-1)
+        {
+            /*den første if ser efter om den er kommet til det sidste ord i beskeden
+            den sortere også mellemrum fra når de er lige efter hinanden*/
+            if(i==messageTotalLength-1 || singleWordlength == 1)
+            {   /*når den finder et mellemrum vil den ligge længeden af ordet in i wordlength
+                og den vil ligge ordet inde i char arrayet.*/
+                if(i==messageTotalLength-1)
+                    {   
+                        SingleWords[j].wordlength = singleWordlength; 
+                        strncpy(SingleWords[j].storedWord, message.message+messageOffset, singleWordlength);
+                        memset(SingleWords[j].storedWord+singleWordlength,'\0',1);
+                    }
+                messageOffset = i;
+                singleWordlength=0;
+            }
+            else
+            {   
+                SingleWords[j].wordlength = singleWordlength;
+                strncpy(SingleWords[j].storedWord, message.message+messageOffset, singleWordlength);
+                memset(SingleWords[j].storedWord+singleWordlength,'\0',1);
+                messageOffset = i+1;
+                j++;
+                singleWordlength=0;
+            }
+
+        }
+    }
+    /*bruger en anden function til at finde dupliceret ord*/
+    messageIssue = WordCompare(SingleWords, totalWords, sizeOfSingleWords);
+    /*her finder den ud af om beskedens indhold kan sees som spam
+    ud fra den filter brugeren har givet progammet*/
+    if (messageIssue!=-1)
+    {
+        if(messageIssue>filter)
+            return 1;
+        else
+            return 0;
+    }
+    else
+        return 0;
+
+free (SingleWords);
+return messageIssue;
+}
+/*finder hvor mange dupliceret ord der er og antal af unikke.
+giver antallet af gange dupliceret ord går op i unikke*/
+int WordCompare(struct OneWord words[], int totalWords, int sizeOfSingleWords)
+{
+    int i, duplicatedWords=0, uniqueWords=0, issues;
+    /*sortere ordne så alle de dupliceret ord kommer efter hinanden*/
+    qsort(words, totalWords, sizeOfSingleWords, SortWords);
+    /*efter sorteringen ser den efter om ordet er det samme som det næste*/
+    for(i=0; i<totalWords; i++)
+    {
+        if(i!=totalWords-1)
+        {
+            if (strcmp(words[i].storedWord, words[i+1].storedWord)==0)
+            {
+                duplicatedWords++;
+            }
+            else
+                uniqueWords++;
+        }
+        else
+        {   
+            if (strcmp(words[i].storedWord, words[i-1].storedWord)!=0)
+            {
+               uniqueWords++; 
+            }
+        }
+    }
+    /*her findes en problemstørrelse ud fra hvor mange unikke ord der er og hvor mange dupliceret ord*/
+    if (duplicatedWords!=0)
+    {
+        issues=uniqueWords / duplicatedWords;
+    }
+    else
+        issues=-1;
+
+    return issues;
+}
+/*sortere ord i OneWord struct arrayet*/
+int SortWords(const void *a, const void *b)
+{
+    struct OneWord *OneWord1 = (struct OneWord*) a;
+    struct OneWord *OneWord2 = (struct OneWord*) a;
+
+    if(strcmp(OneWord1->storedWord, OneWord2->storedWord)==1)
+        return 1;
+    else if (strcmp(OneWord1->storedWord, OneWord2->storedWord)==-1)
+        return -1;
+    else
+        return 0;
 }
