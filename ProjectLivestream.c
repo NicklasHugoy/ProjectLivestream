@@ -59,7 +59,7 @@ int ContainsWord(struct Line line, char *word);
 int MentionsStreamer(struct Line line, char *username);
 int CalculatePoints(struct Line line, struct Config configFile);
 int MessageSpamDetection(struct Line message, int filter);
-int WordCompare(struct OneWord words[], int totalWords, int sizeOfSingleWords);
+int WordCompare(struct OneWord words[], int totalWords);
 int SortWords(const void *a, const void *b);
 
 int main(void)
@@ -80,7 +80,7 @@ int main(void)
         ReadChatLog(&line, inputFile, &hasReachedEndOfFile);
         if(hasReachedEndOfFile != 1)
         {
-            if(MessageSpamDetection(line, 2))
+            if(MessageSpamDetection(line, 3))
             {
                 spamDetected++;
                 continue;
@@ -390,8 +390,7 @@ int MessageSpamDetection(struct Line message, int filter)
     int totalWords=0;
     int singleWordlength=0;
     int longestWord=0;
-    int messageIssue=0;
-    int sizeOfSingleWords;
+    int messageIssue=-1;
     struct OneWord *SingleWords;
 
     messageTotalLength=strlen(message.message);
@@ -410,7 +409,6 @@ int MessageSpamDetection(struct Line message, int filter)
         }
     }
     /*her alloceres plads til den bedsked som blev læst igennem tidligere*/
-    sizeOfSingleWords = sizeof(struct OneWord) + ((10+longestWord)*sizeof(char));
     SingleWords = malloc(totalWords*sizeof(struct OneWord));
     for(i=0; i<totalWords; i++)
     {
@@ -453,14 +451,10 @@ int MessageSpamDetection(struct Line message, int filter)
             }
 
         }
-    }/*
-    for (i = 0; i < totalWords; ++i)
-    {
-        printf("%s ",SingleWords[i].storedWord );
     }
-    printf("\n");*/
     /*bruger en anden function til at finde dupliceret ord*/
-    /*messageIssue = WordCompare(SingleWords, totalWords, sizeOfSingleWords);*/
+    if(totalWords>1)
+        messageIssue = WordCompare(SingleWords, totalWords);
     /*her finder den ud af om beskedens indhold kan sees som spam
     ud fra den filter brugeren har givet progammet*/
     if (messageIssue!=-1)
@@ -472,57 +466,44 @@ int MessageSpamDetection(struct Line message, int filter)
     }
     else
         return 0;
-
-free (SingleWords);
-return messageIssue;
+    for(i=0; i<totalWords; i++)
+    {
+        free (SingleWords[i].storedWord);
+    }
+    free (SingleWords);
+    return messageIssue;
 }
 /*finder hvor mange dupliceret ord der er og antal af unikke.
 giver antallet af gange dupliceret ord går op i unikke*/
-int WordCompare(struct OneWord words[], int totalWords, int sizeOfSingleWords)
+int WordCompare(struct OneWord words[], int totalWords)
 {
-    int i, duplicatedWords=0, uniqueWords=0, issues;
-    /*sortere ordne så alle de dupliceret ord kommer efter hinanden*/
-    qsort(words, totalWords, sizeOfSingleWords, SortWords);
-    /*efter sorteringen ser den efter om ordet er det samme som det næste*/
+    int i, duplicatedWords=0, uniqueWords, issues, j;
+    /*tager et ord og sammenligner med de næste ord til at den rammer en duplikation.*/
     for(i=0; i<totalWords; i++)
     {
-        if(i!=totalWords-1)
+        j=i;
+        while(j<totalWords)
         {
-            if (strcmp(words[i].storedWord, words[i+1].storedWord)==0)
+            if(j!=totalWords-1)
             {
-                duplicatedWords++;
+                if (strcmp(words[i].storedWord, words[j+1].storedWord)==0)
+                {
+                    duplicatedWords++;
+                    break;
+                }
             }
-            else
-                uniqueWords++;
-        }
-        else
-        {
-            if (strcmp(words[i].storedWord, words[i-1].storedWord)!=0)
-            {
-               uniqueWords++;
-            }
+            j++;
         }
     }
     /*her findes en problemstørrelse ud fra hvor mange unikke ord der er og hvor mange dupliceret ord*/
+
+    uniqueWords = totalWords - duplicatedWords;
     if (duplicatedWords!=0)
     {
-        issues=uniqueWords / duplicatedWords;
+        issues = uniqueWords / duplicatedWords;
     }
     else
         issues=-1;
 
     return issues;
-}
-/*sortere ord i OneWord struct arrayet*/
-int SortWords(const void *a, const void *b)
-{
-    struct OneWord *OneWord1 = (struct OneWord*) a;
-    struct OneWord *OneWord2 = (struct OneWord*) a;
-
-    if(strcmp(OneWord1->storedWord, OneWord2->storedWord)==1)
-        return 1;
-    else if (strcmp(OneWord1->storedWord, OneWord2->storedWord)==-1)
-        return -1;
-    else
-        return 0;
 }
