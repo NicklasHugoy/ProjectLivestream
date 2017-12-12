@@ -1,8 +1,7 @@
-Number of whitelisted words 	                    = 4
-Whitelisted words 		                            = who what where when
-Score for mentions                                  = 20
-Score for each whitelisted words                    = 5 5 5 5
-Score required                                      = 0
-Streamer username                                   = Cryaotic
-Chat Delay in seconds                               = 11
-Score for each second between a users messages      = 1
+Number of whitelisted words        = 5
+Whitelisted words                  = who what where when ?
+Score for mentions                 = 20
+Score for each whitelisted words   = 5 5 5 5 10
+Score required                     = 0
+Streamer username                  = Cryaotic
+Chat Delay in seconds              = 11Score for each second between a users messages              = 1

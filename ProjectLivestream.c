@@ -45,7 +45,7 @@ struct OneWord
     char* storedWord;
 };
 
-void UserInputDialog(int *scoreThreshold, char streamerUsername[]);
+void ConfigDialog(struct Config configFile, char filePath[]);
 int ConvertTimestamp(char timestamp[]);
 void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile);
 int SingleChatterDelay(struct User users[], int chatDelay, struct Line newMessage);
@@ -75,6 +75,8 @@ int main(void)
 
     struct Config configFile = GetConfig("TextFiles/config.txt");
 
+    ConfigDialog(configFile, "TextFiles/config.txt");
+
     printf("Processing...\n");
     while(hasReachedEndOfFile != 1)
     {
@@ -93,6 +95,32 @@ int main(void)
     printf("%d message was seen as spam\n", spamDetected );
     fclose(outputFile);
     return 0;
+}
+
+void ConfigDialog(struct Config configFile, char filePath[])
+{
+    char userInput;
+    printf("Current configuration file: \n\n");
+
+    printf("Number of whitelisted words:\t\t\t %d\n", configFile.amountOfWords);
+    for(int i=0; i<configFile.amountOfWords; i++)
+    {
+        printf("%d points if the message contains the word:\t %s\n", configFile.whitelistScore[i], configFile.words[i]);
+    }
+    printf("Score for mentions:\t\t\t\t %d\n", configFile.mentionsScore);
+    printf("Score required:\t\t\t\t\t %d\n", configFile.scoreThreshold);
+    printf("Streamer username:\t\t\t\t %s\n", configFile.username);
+    printf("Chat Delay in seconds: \t\t\t\t %d\n", configFile.chatDelay);
+    printf("Score for each second between a users messages:\t %d\n", configFile.timeScore);
+
+    printf("\nDo you want to create a new config file? (Y/N)\n");
+    scanf(" %c", &userInput);
+    printf("\n\n");
+    if(userInput == 'Y' || userInput == 'y')
+    {
+        remove(filePath);
+        configFile = GetConfig(filePath);
+    }
 }
 
 /* Reads config file and returns Config struct with the settings */
@@ -165,7 +193,7 @@ struct Config GetConfig(char filePath[])
     {
         configFile = fopen(filePath, "w");
 
-        printf("Config file doesn't exist. Please enter values for config file\n");
+        printf("Please enter values for config file\n");
 
         /* Default values if config file dosn't exist */
         printf("Number of whitelisted words: "); scanf(" %s", line);
