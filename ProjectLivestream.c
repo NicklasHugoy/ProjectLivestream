@@ -410,14 +410,22 @@ int MessageSpamDetection(struct Line message, int filter)
     }
     /*her alloceres plads til den bedsked som blev læst igennem tidligere*/
     SingleWords = malloc(totalWords*sizeof(struct OneWord));
-    for(i=0; i<totalWords; i++)
-    {
-        SingleWords[i].storedWord = malloc((longestWord+10)*sizeof(char));
-    }
     if(SingleWords == NULL)
     {
         printf("Error allocating with Malloc for SingeWords\n");
         assert(SingleWords == NULL);
+    }
+    for(i=0; i<totalWords; i++)
+    {
+        SingleWords[i].storedWord = malloc((longestWord+10)*sizeof(char));
+    }
+    for (i=0; i<totalWords; i++)
+    {
+        if (SingleWords[i].storedWord == NULL)
+        {
+            printf("Error in allocation with malloc for storedword %d\n",i);
+            assert(SingleWords[i].storedWord == NULL);
+        }
     }
     /*her gøres det samme som før, men når den finder det ord
     vil den ligge det over i allayet som blev lavet lige før*/
