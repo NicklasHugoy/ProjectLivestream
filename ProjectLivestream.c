@@ -38,6 +38,8 @@ struct Config
     char username[20];
     int chatDelay;
     int timeScore;
+    char chatlogPath[100];
+    char outputPath[100];
 };
 struct OneWord
 {
@@ -63,17 +65,19 @@ void SaveMessage(struct Line line, struct Line savedMessages[]);
 
 int main(void)
 {
-    FILE *outputFile = fopen("TextFiles/Output.txt", "w");
-    FILE *inputFile = fopen("TextFiles/Cryaotic_ChatLog_21-11.txt", "r");
+    FILE *inputFile, *outputFile;
+
     struct Line line;
     struct Line savedMessages[NUMBER_OF_SAVED_MESSAGES];
     int hasReachedEndOfFile = 0;
     struct User users[MAX_UNIQUE_USERS];
     int spamDetected=0;
 
-    struct Config configFile = GetConfig("TextFiles/config.txt");
-
+    struct Config configFile = GetConfig("config.txt");
     ConfigDialog(configFile, "TextFiles/config.txt");
+
+    inputFile = fopen(configFile.chatlogPath, "r");
+    outputFile = fopen(configFile.outputPath, "w");
 
     printf("Processing...\n");
     while(hasReachedEndOfFile != 1)
@@ -156,6 +160,13 @@ struct Config GetConfig(char filePath[])
                   break;
                 case 7:
                   sscanf(information, " %d", &configStruct.timeScore);
+                  break;
+                case 8:
+                  sscanf(information, " %s", configStruct.chatlogPath);
+                  break;
+                case 9:
+                  sscanf(information, " %s", configStruct.outputPath);
+                  break;
             }
             i++;
         }
@@ -183,7 +194,11 @@ struct Config GetConfig(char filePath[])
         printf("Chat Delay in seconds: "); scanf(" %s", line);
         fprintf(configFile, "Chat Delay in seconds              = %s\n", line);
         printf("Score for each second between a users messages: "); scanf(" %s", line);
-        fprintf(configFile, "Score for each second between a users messages              = %s", line);
+        fprintf(configFile, "Score for each second between a users messages              = %s\n", line);
+        printf("Path to chatlog : "); scanf(" %s", line);
+        fprintf(configFile, "Path to chatlog               = %s\n", line);
+        printf("Output Path: "); scanf(" %s", line);
+        fprintf(configFile, "Output Path                = %s\n", line);
 
         fclose(configFile);
         return GetConfig(filePath);
@@ -207,6 +222,8 @@ void ConfigDialog(struct Config configFile, char filePath[])
     printf("Streamer username:\t\t\t\t %s\n", configFile.username);
     printf("Chat Delay in seconds:\t\t\t\t %d\n", configFile.chatDelay);
     printf("Score for each second between a users messages:\t %d\n", configFile.timeScore);
+    printf("Path to chatlog:\t\t\t\t\t %s\n", configFile.chatlogPath);
+    printf("Output Path:\t\t\t\t %s\n", configFile.outputPath);
 
     printf("\nDo you want to create a new config file? (Y/N)\n");
     scanf(" %c", &userInput);
