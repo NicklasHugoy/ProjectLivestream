@@ -80,7 +80,7 @@ int main(void)
         ReadChatLog(&line, inputFile, &hasReachedEndOfFile);
         if(hasReachedEndOfFile != 1)
         {
-            if(MessageSpamDetection(line, 3))
+            if(MessageSpamDetection(line, 2))
             {
                 spamDetected++;
                 continue;
@@ -459,7 +459,7 @@ int MessageSpamDetection(struct Line message, int filter)
     ud fra den filter brugeren har givet progammet*/
     if (messageIssue!=-1)
     {
-        if(messageIssue<filter)
+        if(messageIssue<=filter)
             return 1;
         else
             return 0;
@@ -496,7 +496,6 @@ int WordCompare(struct OneWord words[], int totalWords)
         }
     }
     /*her findes en problemstørrelse ud fra hvor mange unikke ord der er og hvor mange dupliceret ord*/
-
     uniqueWords = totalWords - duplicatedWords;
     if (duplicatedWords!=0)
     {
