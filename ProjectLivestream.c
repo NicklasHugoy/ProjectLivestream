@@ -45,23 +45,21 @@ struct OneWord
     char* storedWord;
 };
 
-void ConfigDialog(struct Config configFile, char filePath[]);
-int ConvertTimestamp(char timestamp[]);
-void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile);
-int SingleChatterDelay(struct User users[], int chatDelay, struct Line newMessage);
-void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[], struct Config configFile, struct User users[]);
-void SaveMessage(struct Line line, struct Line savedMessages[]);
-int CompareWithLastMessages(struct Line line, struct Line savedMessages[]);
-int ContainsProblematicCharacter(char *stringToCheck);
 struct Config GetConfig(char filePath[]);
-int ContainsWhiteListedWords(struct Line line, struct Config config);
-int OnlyNumber(char *input);
-int ContainsWord(struct Line line, char *word);
-int MentionsStreamer(struct Line line, char *username);
-int CalculatePoints(struct Line line, struct Config configFile, struct User users[]);
+void ConfigDialog(struct Config configFile, char filePath[]);
+void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile);
+int ContainsProblematicCharacter(char *stringToCheck);
 int MessageSpamDetection(struct Line message, int filter);
 int WordCompare(struct OneWord words[], int totalWords);
-int SortWords(const void *a, const void *b);
+void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[], struct Config configFile, struct User users[]);
+int CalculatePoints(struct Line line, struct Config configFile, struct User users[]);
+int ContainsWhiteListedWords(struct Line line, struct Config config);
+int ContainsWord(struct Line line, char *word);
+int MentionsStreamer(struct Line line, char *username);
+int SingleChatterDelay(struct User users[], int chatDelay, struct Line newMessage);
+int ConvertTimestamp(char timestamp[]);
+int CompareWithLastMessages(struct Line line, struct Line savedMessages[]);
+void SaveMessage(struct Line line, struct Line savedMessages[]);
 
 int main(void)
 {
@@ -95,32 +93,6 @@ int main(void)
     printf("%d message was seen as spam\n", spamDetected );
     fclose(outputFile);
     return 0;
-}
-
-void ConfigDialog(struct Config configFile, char filePath[])
-{
-    char userInput;
-    printf("Current configuration file: \n\n");
-
-    printf("Number of whitelisted words:\t\t\t %d\n", configFile.amountOfWords);
-    for(int i=0; i<configFile.amountOfWords; i++)
-    {
-        printf("%d points if the message contains the word:\t %s\n", configFile.whitelistScore[i], configFile.words[i]);
-    }
-    printf("Score for mentions:\t\t\t\t %d\n", configFile.mentionsScore);
-    printf("Score required:\t\t\t\t\t %d\n", configFile.scoreThreshold);
-    printf("Streamer username:\t\t\t\t %s\n", configFile.username);
-    printf("Chat Delay in seconds: \t\t\t\t %d\n", configFile.chatDelay);
-    printf("Score for each second between a users messages:\t %d\n", configFile.timeScore);
-
-    printf("\nDo you want to create a new config file? (Y/N)\n");
-    scanf(" %c", &userInput);
-    printf("\n\n");
-    if(userInput == 'Y' || userInput == 'y')
-    {
-        remove(filePath);
-        configFile = GetConfig(filePath);
-    }
 }
 
 /* Reads config file and returns Config struct with the settings */
@@ -209,7 +181,7 @@ struct Config GetConfig(char filePath[])
         printf("Streamer username: "); scanf(" %s", line);
         fprintf(configFile, "Streamer username                  = %s\n", line);
         printf("Chat Delay in seconds: "); scanf(" %s", line);
-        fprintf(configFile, "Chat Delay in seconds              = %s", line);
+        fprintf(configFile, "Chat Delay in seconds              = %s\n", line);
         printf("Score for each second between a users messages: "); scanf(" %s", line);
         fprintf(configFile, "Score for each second between a users messages              = %s", line);
 
@@ -218,6 +190,32 @@ struct Config GetConfig(char filePath[])
     }
 
     return configStruct;
+}
+
+void ConfigDialog(struct Config configFile, char filePath[])
+{
+    char userInput;
+    printf("Current configuration file: \n\n");
+
+    printf("Number of whitelisted words:\t\t\t %d\n", configFile.amountOfWords);
+    for(int i=0; i<configFile.amountOfWords; i++)
+    {
+        printf("%d points if the message contains the word:\t %s\n", configFile.whitelistScore[i], configFile.words[i]);
+    }
+    printf("Score for mentions:\t\t\t\t %d\n", configFile.mentionsScore);
+    printf("Score required:\t\t\t\t\t %d\n", configFile.scoreThreshold);
+    printf("Streamer username:\t\t\t\t %s\n", configFile.username);
+    printf("Chat Delay in seconds:\t\t\t\t %d\n", configFile.chatDelay);
+    printf("Score for each second between a users messages:\t %d\n", configFile.timeScore);
+
+    printf("\nDo you want to create a new config file? (Y/N)\n");
+    scanf(" %c", &userInput);
+    printf("\n\n");
+    if(userInput == 'Y' || userInput == 'y')
+    {
+        remove(filePath);
+        configFile = GetConfig(filePath);
+    }
 }
 
 /*  Read 1 line in the chatlog and
@@ -253,97 +251,6 @@ void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
     }
 }
 
-/* convert timestamp to int of seconds */
-int ConvertTimestamp(char timestamp[])
-{
-	const int MIN = 60;
-	const int SEC = 60;
-	char tempTime[12];
-	int hours, minutes, seconds, tempresult, results;
-
-	sscanf(timestamp,"%s %d:%d:%d", tempTime, &hours, &minutes, &seconds);
-
-	tempresult = hours * MIN + minutes;
-	results = tempresult * SEC + seconds;
-	return results;
-}
-
-void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[], struct Config configFile, struct User users[])
-{
-    int score =CalculatePoints(line, configFile, users);
-    if(score >= configFile.scoreThreshold)
-    {
-        if(CompareWithLastMessages(line, savedMessages))
-            return;
-
-        SaveMessage(line, savedMessages);
-        fprintf(outputFile,"%d [%s] %s: %s\n",score, line.timeStamp, line.username, line.message);
-    }
-}
-
-/*Checker om den nye bruger har skrevet før og om han må skrive igen.*/
-int SingleChatterDelay(struct User users[], int chatDelay, struct Line newMessage)
-{
-	int i;
-	int userindex = MAX_UNIQUE_USERS-1;
-	int result = chatDelay+1;
-	struct User newUser;
-
-	strcpy(newUser.username, newMessage.username);
-	strcpy(newUser.timeStamp, newMessage.timeStamp);
-
-	for(i = 0; i < MAX_UNIQUE_USERS; i++)
-	{
-		if(strcmp(newUser.username, users[i].username) == 0)
-		{
-			result = ConvertTimestamp(newUser.timeStamp) - ConvertTimestamp(users[i].timeStamp);
-			userindex = i;
-			break;
-		}
-	}
-    if(result > chatDelay)
-    {
-        for(i = userindex; i >= 0; i--)
-    	{
-    		if(i == 0)
-    		{
-    			users[i] = newUser;
-    		}
-            else
-            {
-                users[i] = users[i-1];
-            }
-    	}
-    }
-	return result;
-}
-
-/* Save the message to the start of and array and shift the array*/
-void SaveMessage(struct Line line, struct Line savedMessages[])
-{
-    /* Shift elements in array */
-    for(int k = NUMBER_OF_SAVED_MESSAGES-1; k > 0; k--)
-    {
-        savedMessages[k] = savedMessages[k-1];
-    }
-    /* Save new message */
-    savedMessages[0] = line;
-}
-
-/*  Compare the message with an array of older messages
-    and checks if it's the same message */
-int CompareWithLastMessages(struct Line line, struct Line savedMessages[])
-{
-    for(int i = 0; i < NUMBER_OF_SAVED_MESSAGES; i++)
-    {
-        if(strcmp(line.message, savedMessages[i].message) == 0)
-        {
-            return 1;
-        }
-    }
-    return 0;
-}
-
 /*Checks for ascii chars*/
 int ContainsProblematicCharacter(char *stringToCheck)
 {
@@ -364,51 +271,6 @@ int ContainsProblematicCharacter(char *stringToCheck)
     return 0;
 }
 
-/*  Reuturns 1 if the message contains one of the whitelisted words,
-    specified in the config file */
-int ContainsWhiteListedWords(struct Line line, struct Config config)
-{
-    int score = 0;
-    for(int i = 0; i < config.amountOfWords; i++)
-    {
-        /* If message contains the word return 1 */
-        if(ContainsWord(line, config.words[i]))
-            score += config.whitelistScore[i];
-    }
-    return score;
-}
-
-/* Return 1 if the @username is in the message */
-int MentionsStreamer(struct Line line, char *username)
-{
-    /* New arrary with size 1 byte larger than username */
-    char mention[strlen(username)+1];
-
-    /* Adds a @ character in front of the username */
-    mention[0] = '@';
-    strcpy(mention+1, username);
-    return ContainsWord(line, mention);
-}
-
-int ContainsWord(struct Line line, char *word)
-{
-    if(strstr(line.message, word))
-        return 1;
-    return 0;
-}
-
-int CalculatePoints(struct Line line, struct Config configFile, struct User users[])
-{
-    int points = 0;
-
-    points += ContainsWhiteListedWords(line, configFile);
-
-    if(MentionsStreamer(line, configFile.username))
-        points += configFile.mentionsScore;
-
-    points += (configFile.timeScore * (SingleChatterDelay(users, configFile.chatDelay, line)/5));
-    return points;
-}
 /*modtager en besked og et filter.
 deler beskeden op i substrings som består at enkelte ord.
 finder ud af om beskeden sees som spam eller ej.
@@ -512,6 +374,7 @@ int MessageSpamDetection(struct Line message, int filter)
     free (SingleWords);
     return messageIssue;
 }
+
 /*finder hvor mange dupliceret ord der er og antal af unikke.
 giver antallet af gange dupliceret ord går op i unikke*/
 int WordCompare(struct OneWord words[], int totalWords)
@@ -544,4 +407,141 @@ int WordCompare(struct OneWord words[], int totalWords)
         issues=-1;
 
     return issues;
+}
+
+void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[], struct Config configFile, struct User users[])
+{
+    int score = CalculatePoints(line, configFile, users);
+    if(score >= configFile.scoreThreshold)
+    {
+        if(CompareWithLastMessages(line, savedMessages))
+            return;
+
+        SaveMessage(line, savedMessages);
+        fprintf(outputFile,"[%s] %s: %s\n", line.timeStamp, line.username, line.message);
+    }
+}
+
+int CalculatePoints(struct Line line, struct Config configFile, struct User users[])
+{
+    int points = 0;
+
+    points += ContainsWhiteListedWords(line, configFile);
+
+    if(MentionsStreamer(line, configFile.username))
+        points += configFile.mentionsScore;
+
+    points += (configFile.timeScore * (SingleChatterDelay(users, configFile.chatDelay, line)/5));
+    return points;
+}
+
+/*  Reuturns 1 if the message contains one of the whitelisted words,
+    specified in the config file */
+int ContainsWhiteListedWords(struct Line line, struct Config config)
+{
+    int score = 0;
+    for(int i = 0; i < config.amountOfWords; i++)
+    {
+        /* If message contains the word return 1 */
+        if(ContainsWord(line, config.words[i]))
+            score += config.whitelistScore[i];
+    }
+    return score;
+}
+
+int ContainsWord(struct Line line, char *word)
+{
+    if(strstr(line.message, word))
+        return 1;
+    return 0;
+}
+
+/* Return 1 if the @username is in the message */
+int MentionsStreamer(struct Line line, char *username)
+{
+    /* New arrary with size 1 byte larger than username */
+    char mention[strlen(username)+1];
+
+    /* Adds a @ character in front of the username */
+    mention[0] = '@';
+    strcpy(mention+1, username);
+    return ContainsWord(line, mention);
+}
+
+/*Checker om den nye bruger har skrevet før og om han må skrive igen.*/
+int SingleChatterDelay(struct User users[], int chatDelay, struct Line newMessage)
+{
+	int i;
+	int userindex = MAX_UNIQUE_USERS-1;
+	int result = chatDelay+1;
+	struct User newUser;
+
+	strcpy(newUser.username, newMessage.username);
+	strcpy(newUser.timeStamp, newMessage.timeStamp);
+
+	for(i = 0; i < MAX_UNIQUE_USERS; i++)
+	{
+		if(strcmp(newUser.username, users[i].username) == 0)
+		{
+			result = ConvertTimestamp(newUser.timeStamp) - ConvertTimestamp(users[i].timeStamp);
+			userindex = i;
+			break;
+		}
+	}
+    if(result > chatDelay)
+    {
+        for(i = userindex; i >= 0; i--)
+    	{
+    		if(i == 0)
+    		{
+    			users[i] = newUser;
+    		}
+            else
+            {
+                users[i] = users[i-1];
+            }
+    	}
+    }
+	return result;
+}
+
+/* convert timestamp to int of seconds */
+int ConvertTimestamp(char timestamp[])
+{
+	const int MIN = 60;
+	const int SEC = 60;
+	char tempTime[12];
+	int hours, minutes, seconds, tempresult, results;
+
+	sscanf(timestamp,"%s %d:%d:%d", tempTime, &hours, &minutes, &seconds);
+
+	tempresult = hours * MIN + minutes;
+	results = tempresult * SEC + seconds;
+	return results;
+}
+
+/*  Compare the message with an array of older messages
+    and checks if it's the same message */
+int CompareWithLastMessages(struct Line line, struct Line savedMessages[])
+{
+    for(int i = 0; i < NUMBER_OF_SAVED_MESSAGES; i++)
+    {
+        if(strcmp(line.message, savedMessages[i].message) == 0)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* Save the message to the start of and array and shift the array*/
+void SaveMessage(struct Line line, struct Line savedMessages[])
+{
+    /* Shift elements in array */
+    for(int k = NUMBER_OF_SAVED_MESSAGES-1; k > 0; k--)
+    {
+        savedMessages[k] = savedMessages[k-1];
+    }
+    /* Save new message */
+    savedMessages[0] = line;
 }

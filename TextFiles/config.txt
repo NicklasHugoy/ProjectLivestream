@@ -4,4 +4,5 @@ Score for mentions                 = 20
 Score for each whitelisted words   = 5 5 5 5 10
 Score required                     = 0
 Streamer username                  = Cryaotic
-Chat Delay in seconds              = 11Score for each second between a users messages              = 1
+Chat Delay in seconds              = 11
+Score for each second between a users messages              = 1
