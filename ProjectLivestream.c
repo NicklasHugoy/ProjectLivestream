@@ -90,6 +90,8 @@ int main(void)
                 spamDetected++;
                 continue;
             }
+            if(CompareWithLastMessages(line, savedMessages))
+                continue;
             OutputToFile(line, outputFile, savedMessages, configFile, users);
 
         }
@@ -249,7 +251,7 @@ void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
             *hasReachedEndOfFile = 0;
             if(ContainsProblematicCharacter(message))
             {
-                strcpy(line->message,"ERROR - Problematic characters - ERROR");
+                return;
             }
             else
             {
@@ -431,9 +433,6 @@ void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[
     int score = CalculatePoints(line, configFile, users);
     if(score >= configFile.scoreThreshold)
     {
-        if(CompareWithLastMessages(line, savedMessages))
-            return;
-
         SaveMessage(line, savedMessages);
         fprintf(outputFile,"[%s] %s: %s\n", line.timeStamp, line.username, line.message);
     }
