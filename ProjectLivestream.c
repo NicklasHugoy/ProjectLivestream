@@ -72,6 +72,7 @@ int main(void)
     int hasReachedEndOfFile = 0;
     struct User users[MAX_UNIQUE_USERS];
     int spamDetected=0;
+    int problematiskeBeskeder=0;
 
     struct Config configFile = GetConfig("config.txt");
     ConfigDialog(configFile, "TextFiles/config.txt");
@@ -96,8 +97,11 @@ int main(void)
                 OutputToFile(line, outputFile, savedMessages, configFile, users);
             }
         }
+        else
+            problematiskeBeskeder++;
     }
-    printf("%d message was seen as spam\n", spamDetected );
+    printf("%d messages was seens as problematic\n",problematiskeBeskeder);
+    printf("%d messages was seen as spam\n", spamDetected );
     fclose(outputFile);
     return 0;
 }

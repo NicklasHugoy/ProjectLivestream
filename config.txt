@@ -6,5 +6,5 @@ Score required                                      = 0
 Streamer username                                   = Cryaotic
 Chat Delay in seconds                               = 11
 Score for each second between a users messages      = 1
-Path to chatlog                                     = C:\GitHub\ProjectLivestream\TextFiles\ForsenLoL_ChatLog_29-10.txt
-Output Path                                         = C:\GitHub\ProjectLivestream\TextFiles\Output.txt
+Path to chatlog                                     = TextFiles\ForsenLoL_ChatLog_29-10.txt
+Output Path                                         = TextFiles\Output.txt
