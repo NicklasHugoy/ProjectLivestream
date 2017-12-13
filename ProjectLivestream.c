@@ -19,7 +19,6 @@ struct Line
     char username[40];
     char timeStamp[40];
     char message[501];
-    int score;
 };
 
 struct User
