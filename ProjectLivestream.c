@@ -49,7 +49,7 @@ struct OneWord
 
 struct Config GetConfig(char filePath[]);
 void ConfigDialog(struct Config configFile, char filePath[]);
-void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile);
+int ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile);
 int ContainsProblematicCharacter(char *stringToCheck);
 int MessageSpamDetection(struct Line message, int filter);
 int WordCompare(struct OneWord words[], int totalWords);
@@ -82,18 +82,19 @@ int main(void)
     printf("Processing...\n");
     while(hasReachedEndOfFile != 1)
     {
-        ReadChatLog(&line, inputFile, &hasReachedEndOfFile);
-        if(hasReachedEndOfFile != 1)
+        if(ReadChatLog(&line, inputFile, &hasReachedEndOfFile))
         {
-            if(MessageSpamDetection(line, 2))
+            if(hasReachedEndOfFile != 1)
             {
-                spamDetected++;
-                continue;
+                if(MessageSpamDetection(line, 2))
+                {
+                    spamDetected++;
+                    continue;
+                }
+                if(CompareWithLastMessages(line, savedMessages))
+                    continue;
+                OutputToFile(line, outputFile, savedMessages, configFile, users);
             }
-            if(CompareWithLastMessages(line, savedMessages))
-                continue;
-            OutputToFile(line, outputFile, savedMessages, configFile, users);
-
         }
     }
     printf("%d message was seen as spam\n", spamDetected );
@@ -237,9 +238,10 @@ void ConfigDialog(struct Config configFile, char filePath[])
     }
 }
 
-/*  Read 1 line in the chatlog and
-    returns 1 if there aren't more lines to read */
-void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
+/*  Read 1 line in the chatlog.
+    hasReachedEndOfFile is set to 1 if there aren't more lines to read.
+    Function returns 0 if the current message should be skipped */
+int ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
 {
     char message[2001];
     if(inputFile != NULL)
@@ -251,7 +253,7 @@ void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
             *hasReachedEndOfFile = 0;
             if(ContainsProblematicCharacter(message))
             {
-                return;
+                return 0;
             }
             else
             {
@@ -268,6 +270,7 @@ void ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
         printf("Problem with file, exiting program...\n");
         exit(EXIT_FAILURE);
     }
+    return 1;
 }
 
 /*Checks for ascii chars*/
