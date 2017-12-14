@@ -342,7 +342,7 @@ int MessageSpamDetection(struct Line message, int filter)
     }
     for(i=0; i<totalWords; i++)
     {
-        SingleWords[i].storedWord = malloc((longestWord+10)*sizeof(char));
+        SingleWords[i].storedWord = malloc((longestWord+1)*sizeof(char));
     }
     for (i=0; i<totalWords; i++)
     {
