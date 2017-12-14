@@ -209,7 +209,7 @@ struct Config GetConfig(char filePath[])
         fprintf(configFile, "Path to chatlog               = %s\n", line);
         printf("Output Path: "); scanf(" %s", line);
         fprintf(configFile, "Output Path                = %s\n", line);
-        printf("Amount of previous messages to check against: "); scanf(" %s\n", line);
+        printf("Amount of previous messages to check against: "); scanf(" %s", line);
         fprintf(configFile, "Amount of previous messages to check against      = %s\n", line);
 
         fclose(configFile);
