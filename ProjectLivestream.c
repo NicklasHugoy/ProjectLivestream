@@ -17,7 +17,7 @@ struct Line
 {
     char username[40];
     char timeStamp[40];
-    char message[501];
+    char message[531];
 };
 
 struct User
@@ -287,8 +287,8 @@ int ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
 int ContainsProblematicCharacter(char *stringToCheck)
 {
     int messageLenght = strlen(stringToCheck);
-    char normalText[] = "abcdefghijklmnopqrstuvwxyz,!:;=+- ?.ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-    int falseChars = 1;
+    char normalText[] = "abcdefghijklmnopqrstuvwxyz<>@^\"/\\_´'&#()*,!:;=+- ?.ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    int falseChars = 0;
     for(int i=0; i<messageLenght; i++)
     {
         if(strchr(normalText, stringToCheck[i]) == NULL)
@@ -296,7 +296,7 @@ int ContainsProblematicCharacter(char *stringToCheck)
             falseChars++;
         }
     }
-    if((messageLenght / falseChars) <= 2)
+    if(falseChars > 10)
     {
         return 1;
     }
