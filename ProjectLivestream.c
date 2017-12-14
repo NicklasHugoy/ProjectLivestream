@@ -12,7 +12,6 @@
 #include <assert.h>
 
 #define MAX_UNIQUE_USERS 10
-#define NUMBER_OF_SAVED_MESSAGES 5
 
 struct Line
 {
@@ -39,6 +38,7 @@ struct Config
     int timeScore;
     char chatlogPath[100];
     char outputPath[100];
+    int amountOfSavedMessages;
 };
 struct OneWord
 {
@@ -59,15 +59,13 @@ int ContainsWord(struct Line line, char *word);
 int MentionsStreamer(struct Line line, char *username);
 int SingleChatterDelay(struct User users[], int chatDelay, struct Line newMessage);
 int ConvertTimestamp(char timestamp[]);
-int CompareWithLastMessages(struct Line line, struct Line savedMessages[]);
-void SaveMessage(struct Line line, struct Line savedMessages[]);
+int CompareWithLastMessages(struct Line line, struct Line savedMessages[], struct Config configFile);
+void SaveMessage(struct Line line, struct Line savedMessages[], struct Config configFile);
 
 int main(void)
 {
     FILE *inputFile, *outputFile;
-
     struct Line line;
-    struct Line savedMessages[NUMBER_OF_SAVED_MESSAGES];
     int hasReachedEndOfFile = 0;
     struct User users[MAX_UNIQUE_USERS];
     int spamDetected=0;
@@ -75,6 +73,8 @@ int main(void)
 
     struct Config configFile = GetConfig("config.txt");
     ConfigDialog(configFile, "TextFiles/config.txt");
+
+    struct Line savedMessages[configFile.amountOfSavedMessages];
 
     inputFile = fopen(configFile.chatlogPath, "r");
     outputFile = fopen(configFile.outputPath, "w");
@@ -91,7 +91,7 @@ int main(void)
                     spamDetected++;
                     continue;
                 }
-                if(CompareWithLastMessages(line, savedMessages))
+                if(CompareWithLastMessages(line, savedMessages, configFile))
                     continue;
                 OutputToFile(line, outputFile, savedMessages, configFile, users);
             }
@@ -173,6 +173,10 @@ struct Config GetConfig(char filePath[])
                 case 9:
                   sscanf(information, " %s", configStruct.outputPath);
                   break;
+                case 10:
+                  sscanf(information, " %d", &configStruct.amountOfSavedMessages);
+                  break;
+
             }
             i++;
         }
@@ -205,6 +209,8 @@ struct Config GetConfig(char filePath[])
         fprintf(configFile, "Path to chatlog               = %s\n", line);
         printf("Output Path: "); scanf(" %s", line);
         fprintf(configFile, "Output Path                = %s\n", line);
+        printf("Amount of previous messages to check against: "); scanf(" %s\n", line);
+        fprintf(configFile, "Amount of previous messages to check against      = %s\n", line);
 
         fclose(configFile);
         return GetConfig(filePath);
@@ -230,6 +236,7 @@ void ConfigDialog(struct Config configFile, char filePath[])
     printf("Score for each second between a users messages:\t %d\n", configFile.timeScore);
     printf("Path to chatlog:\t\t\t\t\t %s\n", configFile.chatlogPath);
     printf("Output Path:\t\t\t\t %s\n", configFile.outputPath);
+    printf("Amount of previous messages to check against:\t\t\t %d\n", configFile.amountOfSavedMessages);
 
     printf("\nDo you want to create a new config file? (Y/N)\n");
     scanf(" %c", &userInput);
@@ -439,7 +446,7 @@ void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[
     int score = CalculatePoints(line, configFile, users);
     if(score >= configFile.scoreThreshold)
     {
-        SaveMessage(line, savedMessages);
+        SaveMessage(line, savedMessages, configFile);
         fprintf(outputFile,"[%s] %s: %s\n", line.timeStamp, line.username, line.message);
     }
 }
@@ -544,9 +551,9 @@ int ConvertTimestamp(char timestamp[])
 
 /*  Compare the message with an array of older messages
     and checks if it's the same message */
-int CompareWithLastMessages(struct Line line, struct Line savedMessages[])
+int CompareWithLastMessages(struct Line line, struct Line savedMessages[], struct Config configFile)
 {
-    for(int i = 0; i < NUMBER_OF_SAVED_MESSAGES; i++)
+    for(int i = 0; i < configFile.amountOfSavedMessages; i++)
     {
         if(strcmp(line.message, savedMessages[i].message) == 0)
         {
@@ -557,10 +564,10 @@ int CompareWithLastMessages(struct Line line, struct Line savedMessages[])
 }
 
 /* Save the message to the start of and array and shift the array*/
-void SaveMessage(struct Line line, struct Line savedMessages[])
+void SaveMessage(struct Line line, struct Line savedMessages[], struct Config configFile)
 {
     /* Shift elements in array */
-    for(int k = NUMBER_OF_SAVED_MESSAGES-1; k > 0; k--)
+    for(int k = configFile.amountOfSavedMessages - 1; k > 0; k--)
     {
         savedMessages[k] = savedMessages[k-1];
     }
