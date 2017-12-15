@@ -11,13 +11,14 @@
 #include <ctype.h>
 #include <assert.h>
 
-#define MAX_UNIQUE_USERS 10
+#define MAX_UNIQUE_USERS 50
 
 struct Line
 {
     char username[40];
     char timeStamp[40];
-    char message[501];
+    char message[510];
+
 };
 
 struct User
@@ -61,6 +62,7 @@ int SingleChatterDelay(struct User users[], int chatDelay, struct Line newMessag
 int ConvertTimestamp(char timestamp[]);
 int CompareWithLastMessages(struct Line line, struct Line savedMessages[], struct Config configFile);
 void SaveMessage(struct Line line, struct Line savedMessages[], struct Config configFile);
+char *wordFind(char *str, char *word);
 
 int main(void)
 {
@@ -480,9 +482,31 @@ int ContainsWhiteListedWords(struct Line line, struct Config config)
 
 int ContainsWord(struct Line line, char *word)
 {
-    if(strstr(line.message, word))
+    char *containWord = wordFind(line.message, word);
+
+    if(containWord)
         return 1;
     return 0;
+}
+
+char *wordFind(char *str, char *word)
+{
+    char *p = NULL;
+    int len = strlen(word);
+
+    if (len > 0)
+    {
+        for (p = str; (p = strstr(p, word)) != NULL; p++)
+        {
+            if (p == str || !isalnum(p[-1]))
+            {
+                if (!isalnum(p[len]))
+                    break;  /* we have a match! */
+                p += len;   /* next match is at least len+1 bytes away */
+            }
+        }
+    }
+    return p;
 }
 
 /* Return 1 if the @username is in the message */
@@ -574,3 +598,4 @@ void SaveMessage(struct Line line, struct Line savedMessages[], struct Config co
     /* Save new message */
     savedMessages[0] = line;
 }
+
