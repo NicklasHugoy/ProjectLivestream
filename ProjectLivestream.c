@@ -56,12 +56,13 @@ void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[
 int CalculatePoints(struct Line line, struct Config configFile, struct User users[]);
 int ContainsWhiteListedWords(struct Line line, struct Config config);
 int ContainsWord(struct Line line, char *word);
+char *stringToLowerCase(char *string);
+char *wordFind(char *str, char *word);
 int MentionsStreamer(struct Line line, char *username);
 int SingleChatterDelay(struct User users[], int chatDelay, struct Line newMessage);
 int ConvertTimestamp(char timestamp[]);
 int CompareWithLastMessages(struct Line line, struct Line savedMessages[], struct Config configFile);
 void SaveMessage(struct Line line, struct Line savedMessages[], struct Config configFile);
-char *wordFind(char *str, char *word);
 
 int main(void)
 {
@@ -481,11 +482,32 @@ int ContainsWhiteListedWords(struct Line line, struct Config config)
 
 int ContainsWord(struct Line line, char *word)
 {
-    char *containWord = wordFind(line.message, word);
+    char *wordLCase = stringToLowerCase(word);
+    char *messageLCase = stringToLowerCase(line.message);
+
+    char *containWord = wordFind(messageLCase, wordLCase);
 
     if(containWord)
+    {
+        free(wordLCase);
+        free(messageLCase);
         return 1;
+    }
+    free(wordLCase);
+    free(messageLCase);
     return 0;
+}
+
+char *stringToLowerCase(char *string)
+{
+    int stringLength = strlen(string)+1;
+    char *lowerCaseString = malloc(sizeof(char)*stringLength);
+
+    for(int i=0; i<stringLength; i++)
+    {
+        lowerCaseString[i] = tolower(string[i]);
+    }
+    return lowerCaseString;
 }
 
 char *wordFind(char *str, char *word)
@@ -597,4 +619,3 @@ void SaveMessage(struct Line line, struct Line savedMessages[], struct Config co
     /* Save new message */
     savedMessages[0] = line;
 }
-
