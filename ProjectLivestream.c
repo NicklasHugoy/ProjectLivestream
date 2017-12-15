@@ -533,13 +533,7 @@ char *wordFind(char *str, char *word)
 /* Return 1 if the @username is in the message */
 int MentionsStreamer(struct Line line, char *username)
 {
-    /* New arrary with size 1 byte larger than username */
-    char mention[strlen(username)+1];
-
-    /* Adds a @ character in front of the username */
-    mention[0] = '@';
-    strcpy(mention+1, username);
-    return ContainsWord(line, mention);
+    return ContainsWord(line, username);
 }
 
 /*Checker om den nye bruger har skrevet før og om han må skrive igen.*/
