@@ -93,7 +93,7 @@ int main(void)
         if(ReadChatLog(&line, inputFile, &hasReachedEndOfFile, problematicChars))
         {
             if(hasReachedEndOfFile != 1)
-            {   
+            {
                 spamissuecount = MessageSpamDetection(line, 2);
                 if(spamissuecount>=0 && spamissuecount<=3)
                 {
@@ -276,7 +276,7 @@ int ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile, FI
             line->timeStamp, line->username, message) == 3)
         {
             *hasReachedEndOfFile = 0;
-            charIssues = ContainsProblematicCharacter(message); 
+            charIssues = ContainsProblematicCharacter(message);
             if(charIssues>20)
             {
                 fprintf(problematicChars, "%d [%s] %s: %s\n", charIssues, line->timeStamp, line->username, message);
@@ -406,7 +406,7 @@ int MessageSpamDetection(struct Line message, int filter)
     /*bruger en anden function til at finde dupliceret ord*/
     if(totalWords>1)
         messageIssue = WordCompare(SingleWords, totalWords);
-    
+
 
     for(i=0; i<totalWords; i++)
     {
@@ -462,21 +462,21 @@ void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[
 
 int CalculatePoints(struct Line line, struct Config configFile, struct User users[])
 {
-    int points = 0, timeScore;
+    int points = 0, timeSince;
 
     points += ContainsWhiteListedWords(line, configFile);
 
     if(MentionsStreamer(line, configFile.username))
         points += configFile.mentionsScore;
 
-    timeScore = (configFile.timeScore * (SingleChatterDelay(users, configFile.chatDelay, line)/5));
-    if(timeScore <= configFile.chatDelay)
+    timeSince = SingleChatterDelay(users, configFile.chatDelay, line);
+    if(timeSince <= configFile.chatDelay)
     {
-        points += timeScore/5;
+        points += configFile.timeScore * (timeSince/5);
     }
     else
     {
-        points += configFile.chatDelay/5;
+        points += configFile.timeScore * (configFile.chatDelay/5);
     }
     return points;
 }
@@ -545,7 +545,7 @@ char *wordFind(char *str, char *word)
     return p;
 }
 
-/* Return 1 if the @username is in the message */
+/* Return 1 if the username is in the message */
 int MentionsStreamer(struct Line line, char *username)
 {
     return ContainsWord(line, username);
