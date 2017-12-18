@@ -73,6 +73,7 @@ int main(void)
     struct User users[MAX_UNIQUE_USERS];
     int spamDetected=0;
     int spamissuecount=0;
+    int lastMessageCompare=0;
     int problematiskeBeskeder=0;
 
     struct Config configFile = GetConfig("config.txt");
@@ -85,6 +86,7 @@ int main(void)
 
     spamFile = fopen("spamfile.txt", "w");
     problematicChars = fopen("problematicChars.txt","w");
+
     printf("Processing...\n");
     while(hasReachedEndOfFile != 1)
     {
@@ -100,7 +102,10 @@ int main(void)
                     continue;
                 }
                 if(CompareWithLastMessages(line, savedMessages, configFile))
+                {
+                    lastMessageCompare++;
                     continue;
+                }
                 OutputToFile(line, outputFile, savedMessages, configFile, users);
             }
         }
@@ -109,6 +114,7 @@ int main(void)
     }
     printf("%d messages was seens as problematic\n",problematiskeBeskeder);
     printf("%d messages was seen as spam\n", spamDetected );
+    printf("%d messages were identically to previous messages \n", lastMessageCompare);
     fclose(outputFile);
     return 0;
 }
