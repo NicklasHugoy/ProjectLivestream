@@ -67,10 +67,12 @@ void SaveMessage(struct Line line, struct Line savedMessages[], struct Config co
 int main(void)
 {
     FILE *inputFile, *outputFile;
+    FILE *spamFile;
     struct Line line;
     int hasReachedEndOfFile = 0;
     struct User users[MAX_UNIQUE_USERS];
     int spamDetected=0;
+    int spamissuecount=0;
     int problematiskeBeskeder=0;
 
     struct Config configFile = GetConfig("config.txt");
@@ -81,15 +83,19 @@ int main(void)
     inputFile = fopen(configFile.chatlogPath, "r");
     outputFile = fopen(configFile.outputPath, "w");
 
+    spamFile = fopen("spamfile.txt", "w");
+
     printf("Processing...\n");
     while(hasReachedEndOfFile != 1)
     {
         if(ReadChatLog(&line, inputFile, &hasReachedEndOfFile))
         {
             if(hasReachedEndOfFile != 1)
-            {
-                if(MessageSpamDetection(line, 2))
+            {   
+                spamissuecount = MessageSpamDetection(line, 2);
+                if(spamissuecount>=0 && spamissuecount<=3)
                 {
+                    fprintf(spamFile,"%d [%s] %s: %s\n", spamissuecount, line.timeStamp, line.username, line.message);
                     spamDetected++;
                     continue;
                 }
@@ -390,17 +396,8 @@ int MessageSpamDetection(struct Line message, int filter)
     /*bruger en anden function til at finde dupliceret ord*/
     if(totalWords>1)
         messageIssue = WordCompare(SingleWords, totalWords);
-    /*her finder den ud af om beskedens indhold kan sees som spam
-    ud fra den filter brugeren har givet progammet*/
-    if (messageIssue!=-1)
-    {
-        if(messageIssue<=filter)
-            return 1;
-        else
-            return 0;
-    }
-    else
-        return 0;
+    
+
     for(i=0; i<totalWords; i++)
     {
         free (SingleWords[i].storedWord);
