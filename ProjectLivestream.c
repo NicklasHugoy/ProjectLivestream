@@ -48,7 +48,7 @@ struct OneWord
 
 struct Config GetConfig(char filePath[]);
 void ConfigDialog(struct Config configFile, char filePath[]);
-int ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile);
+int ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile, FILE* problematicChars);
 int ContainsProblematicCharacter(char *stringToCheck);
 int MessageSpamDetection(struct Line message, int filter);
 int WordCompare(struct OneWord words[], int totalWords);
@@ -67,7 +67,7 @@ void SaveMessage(struct Line line, struct Line savedMessages[], struct Config co
 int main(void)
 {
     FILE *inputFile, *outputFile;
-    FILE *spamFile;
+    FILE *spamFile, *problematicChars;
     struct Line line;
     int hasReachedEndOfFile = 0;
     struct User users[MAX_UNIQUE_USERS];
@@ -84,11 +84,11 @@ int main(void)
     outputFile = fopen(configFile.outputPath, "w");
 
     spamFile = fopen("spamfile.txt", "w");
-
+    problematicChars = fopen("problematicChars.txt","w");
     printf("Processing...\n");
     while(hasReachedEndOfFile != 1)
     {
-        if(ReadChatLog(&line, inputFile, &hasReachedEndOfFile))
+        if(ReadChatLog(&line, inputFile, &hasReachedEndOfFile, problematicChars))
         {
             if(hasReachedEndOfFile != 1)
             {   
@@ -259,9 +259,10 @@ void ConfigDialog(struct Config configFile, char filePath[])
 /*  Read 1 line in the chatlog.
     hasReachedEndOfFile is set to 1 if there aren't more lines to read.
     Function returns 0 if the current message should be skipped */
-int ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
+int ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile, FILE* problematicChars)
 {
     char message[2001];
+    int charIssues=0;
     if(inputFile != NULL)
     {
         /* Check if fscanf successfully has assigned values to 2 variables */
@@ -269,8 +270,10 @@ int ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
             line->timeStamp, line->username, message) == 3)
         {
             *hasReachedEndOfFile = 0;
-            if(ContainsProblematicCharacter(message))
+            charIssues = ContainsProblematicCharacter(message); 
+            if(charIssues>20)
             {
+                fprintf(problematicChars, "%d [%s] %s: %s\n", charIssues, line->timeStamp, line->username, message);
                 return 0;
             }
             else
@@ -295,7 +298,7 @@ int ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
 int ContainsProblematicCharacter(char *stringToCheck)
 {
     int messageLenght = strlen(stringToCheck);
-    char normalText[] = "abcdefghijklmnopqrstuvwxyz<>@^\"/\\_´'&#()*,!:;=+- ?.ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    char normalText[] = "abcdefghijklmnopqrstuvwxyz<>@^\"/\\_´'&#()[]{}$*,!:;=+- ?.ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
     int falseChars = 0;
     for(int i=0; i<messageLenght; i++)
     {
@@ -304,11 +307,7 @@ int ContainsProblematicCharacter(char *stringToCheck)
             falseChars++;
         }
     }
-    if(falseChars > 10)
-    {
-        return 1;
-    }
-    return 0;
+    return falseChars;
 }
 
 /*modtager en besked og et filter.
