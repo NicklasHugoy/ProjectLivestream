@@ -48,7 +48,7 @@ struct OneWord
 
 struct Config GetConfig(char filePath[]);
 void ConfigDialog(struct Config configFile, char filePath[]);
-int ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile);
+int ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile, FILE* problematicChars);
 int ContainsProblematicCharacter(char *stringToCheck);
 int MessageSpamDetection(struct Line message, int filter);
 int WordCompare(struct OneWord words[], int totalWords);
@@ -67,10 +67,12 @@ void SaveMessage(struct Line line, struct Line savedMessages[], struct Config co
 int main(void)
 {
     FILE *inputFile, *outputFile;
+    FILE *spamFile, *problematicChars;
     struct Line line;
     int hasReachedEndOfFile = 0;
     struct User users[MAX_UNIQUE_USERS];
     int spamDetected=0;
+    int spamissuecount=0;
     int problematiskeBeskeder=0;
 
     struct Config configFile = GetConfig("config.txt");
@@ -81,15 +83,19 @@ int main(void)
     inputFile = fopen(configFile.chatlogPath, "r");
     outputFile = fopen(configFile.outputPath, "w");
 
+    spamFile = fopen("spamfile.txt", "w");
+    problematicChars = fopen("problematicChars.txt","w");
     printf("Processing...\n");
     while(hasReachedEndOfFile != 1)
     {
-        if(ReadChatLog(&line, inputFile, &hasReachedEndOfFile))
+        if(ReadChatLog(&line, inputFile, &hasReachedEndOfFile, problematicChars))
         {
             if(hasReachedEndOfFile != 1)
-            {
-                if(MessageSpamDetection(line, 2))
+            {   
+                spamissuecount = MessageSpamDetection(line, 2);
+                if(spamissuecount>=0 && spamissuecount<=3)
                 {
+                    fprintf(spamFile,"%d [%s] %s: %s\n", spamissuecount, line.timeStamp, line.username, line.message);
                     spamDetected++;
                     continue;
                 }
@@ -253,9 +259,10 @@ void ConfigDialog(struct Config configFile, char filePath[])
 /*  Read 1 line in the chatlog.
     hasReachedEndOfFile is set to 1 if there aren't more lines to read.
     Function returns 0 if the current message should be skipped */
-int ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
+int ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile, FILE* problematicChars)
 {
     char message[2001];
+    int charIssues=0;
     if(inputFile != NULL)
     {
         /* Check if fscanf successfully has assigned values to 2 variables */
@@ -263,8 +270,10 @@ int ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
             line->timeStamp, line->username, message) == 3)
         {
             *hasReachedEndOfFile = 0;
-            if(ContainsProblematicCharacter(message))
+            charIssues = ContainsProblematicCharacter(message); 
+            if(charIssues>20)
             {
+                fprintf(problematicChars, "%d [%s] %s: %s\n", charIssues, line->timeStamp, line->username, message);
                 return 0;
             }
             else
@@ -289,7 +298,7 @@ int ReadChatLog(struct Line *line, FILE* inputFile, int *hasReachedEndOfFile)
 int ContainsProblematicCharacter(char *stringToCheck)
 {
     int messageLenght = strlen(stringToCheck);
-    char normalText[] = "abcdefghijklmnopqrstuvwxyz<>@^\"/\\_´'&#()*,!:;=+- ?.ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    char normalText[] = "abcdefghijklmnopqrstuvwxyz<>@^\"/\\_´'&#()[]{}$*,!:;=+- ?.ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
     int falseChars = 0;
     for(int i=0; i<messageLenght; i++)
     {
@@ -298,11 +307,7 @@ int ContainsProblematicCharacter(char *stringToCheck)
             falseChars++;
         }
     }
-    if(falseChars > 10)
-    {
-        return 1;
-    }
-    return 0;
+    return falseChars;
 }
 
 /*modtager en besked og et filter.
@@ -395,17 +400,8 @@ int MessageSpamDetection(struct Line message, int filter)
     /*bruger en anden function til at finde dupliceret ord*/
     if(totalWords>1)
         messageIssue = WordCompare(SingleWords, totalWords);
-    /*her finder den ud af om beskedens indhold kan sees som spam
-    ud fra den filter brugeren har givet progammet*/
-    if (messageIssue!=-1)
-    {
-        if(messageIssue<=filter)
-            return 1;
-        else
-            return 0;
-    }
-    else
-        return 0;
+    
+
     for(i=0; i<totalWords; i++)
     {
         free (SingleWords[i].storedWord);
@@ -546,13 +542,7 @@ char *wordFind(char *str, char *word)
 /* Return 1 if the @username is in the message */
 int MentionsStreamer(struct Line line, char *username)
 {
-    /* New arrary with size 1 byte larger than username */
-    char mention[strlen(username)+1];
-
-    /* Adds a @ character in front of the username */
-    mention[0] = '@';
-    strcpy(mention+1, username);
-    return ContainsWord(line, mention);
+    return ContainsWord(line, username);
 }
 
 /*Checker om den nye bruger har skrevet før og om han må skrive igen.*/
