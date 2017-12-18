@@ -369,7 +369,10 @@ int MessageSpamDetection(struct Line message, int filter)
                 if(i==messageTotalLength-1)
                     {
                         SingleWords[j].wordlength = singleWordlength;
-                        strncpy(SingleWords[j].storedWord, message.message+messageOffset, singleWordlength);
+                        strncpy(SingleWords[j].storedWord,
+                            message.message+messageOffset,
+                            singleWordlength);
+
                         memset(SingleWords[j].storedWord+singleWordlength,'\0',1);
                     }
                 messageOffset = i+1;
@@ -378,13 +381,15 @@ int MessageSpamDetection(struct Line message, int filter)
             else
             {
                 SingleWords[j].wordlength = singleWordlength-1;
-                strncpy(SingleWords[j].storedWord, message.message+messageOffset, singleWordlength-1);
+                strncpy(SingleWords[j].storedWord,
+                    message.message+messageOffset,
+                    singleWordlength-1);
+
                 memset(SingleWords[j].storedWord+singleWordlength-1,'\0',1);
                 messageOffset = i+1;
                 j++;
                 singleWordlength=0;
             }
-
         }
     }
     /*bruger en anden function til at finde dupliceret ord*/
@@ -455,14 +460,22 @@ void OutputToFile(struct Line line, FILE *outputFile, struct Line savedMessages[
 
 int CalculatePoints(struct Line line, struct Config configFile, struct User users[])
 {
-    int points = 0;
+    int points = 0, timeScore;
 
     points += ContainsWhiteListedWords(line, configFile);
 
     if(MentionsStreamer(line, configFile.username))
         points += configFile.mentionsScore;
 
-    points += (configFile.timeScore * (SingleChatterDelay(users, configFile.chatDelay, line)/5));
+    timeScore = (configFile.timeScore * (SingleChatterDelay(users, configFile.chatDelay, line)/5));
+    if(timeScore <= configFile.chatDelay)
+    {
+        points += timeScore/5;
+    }
+    else
+    {
+        points += configFile.chatDelay/5;
+    }
     return points;
 }
 
@@ -547,7 +560,7 @@ int SingleChatterDelay(struct User users[], int chatDelay, struct Line newMessag
 {
 	int i;
 	int userindex = MAX_UNIQUE_USERS-1;
-	int result = chatDelay+1;
+	int result = chatDelay;
 	struct User newUser;
 
 	strcpy(newUser.username, newMessage.username);
@@ -562,7 +575,7 @@ int SingleChatterDelay(struct User users[], int chatDelay, struct Line newMessag
 			break;
 		}
 	}
-    if(result > chatDelay)
+    if(result >= chatDelay)
     {
         for(i = userindex; i >= 0; i--)
     	{
